@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+
 import javax.swing.AbstractButton;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
@@ -364,6 +365,7 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		popOver.add(close, "gaptop 15px, span, align right");
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void actionPerformed(ActionEvent e) 
 	{
@@ -400,6 +402,11 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		    
 		    if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
 		    {
+		    	dataInicial.getDate().setHours(horaInicial.getSelectedIndex());
+		    	dataInicial.getDate().setMinutes(0);
+		    	dataFinal.getDate().setHours(horaFinal.getSelectedIndex());
+		    	dataFinal.getDate().setMinutes(59);
+		    	
 		    	ExportarVendasPDF exportar = new ExportarVendasPDF(dataInicial.getDate(), 
 		    									dataFinal.getDate(), chooser, gerarPesquisa());
 		    	new Thread(exportar).start();
@@ -437,8 +444,7 @@ public class TabelaVendas extends WebPanel implements ActionListener
 	}
 	
 	public String gerarPesquisa()
-	{		
-		
+	{
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		String formatInicial = df.format(dataInicial.getDate());
 		String formatFinal = df.format(dataFinal.getDate());
@@ -446,11 +452,11 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		String horaInicio = (horaInicial.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
 		String horaFim = (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":59:59";
 		
-		String formatacao = "SELECT * FROM vendas WHERE data BETWEEN ('" 
-				+ formatInicial + "') " 
-				+ "AND ('" + formatFinal + "') ";
+		String formatacao = "SELECT * FROM vendas WHERE (data >= '" 
+				+ formatInicial + "' " 
+				+ "and data <= '" + formatFinal + "') ";
 		
-		formatacao += "AND hora BETWEEN ('" + horaInicio + "') AND ('" + horaFim + "') ";
+		formatacao += "AND (hora >= '" + horaInicio + "' and hora <= '" + horaFim + "') ";
 		
 		if(filtroCampoDelivery.getSelectedIndex() > 0)
 		{

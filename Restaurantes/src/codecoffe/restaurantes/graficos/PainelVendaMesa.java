@@ -305,7 +305,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		tabelaPedido.getColumnModel().getColumn(0).setMinWidth(70);
 		tabelaPedido.getColumnModel().getColumn(0).setMaxWidth(70);
 		tabelaPedido.getColumnModel().getColumn(1).setPreferredWidth(180);
-		tabelaPedido.getColumnModel().getColumn(2).setPreferredWidth(45);
+		tabelaPedido.getColumnModel().getColumn(2).setPreferredWidth(55);
 		tabelaPedido.getColumnModel().getColumn(3).setPreferredWidth(80);			
 		tabelaPedido.getColumnModel().getColumn(4).setPreferredWidth(80);
 		tabelaPedido.getColumnModel().getColumn(5).setPreferredWidth(200);
