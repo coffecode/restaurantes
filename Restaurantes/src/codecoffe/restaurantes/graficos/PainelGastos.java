@@ -122,14 +122,14 @@ public class PainelGastos extends WebPanel implements ActionListener
 		pesquisar.addActionListener(this);
 
 		adicionarGasto = new WebButton();
-		adicionarGasto.setToolTipText("Adicionar Gasto");
+		adicionarGasto.setToolTipText("Adicionar Anotação");
 		adicionarGasto.setRolloverDecoratedOnly(true);
 		adicionarGasto.setPreferredSize(new Dimension(32, 32));
 		adicionarGasto.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/concluir.png")));
 		adicionarGasto.addActionListener(this);
 		
 		verGraficoGastos = new WebButton();
-		verGraficoGastos.setToolTipText("Gráfico de Gastos");
+		verGraficoGastos.setToolTipText("Gráfico de Anotações");
 		verGraficoGastos.setRolloverDecoratedOnly(true);
 		verGraficoGastos.setPreferredSize(new Dimension(32, 32));
 		verGraficoGastos.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/estatisticas_aba.png")));
@@ -199,7 +199,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 		popOver.setMovable(false);
 		popOver.setLayout(new MigLayout());
 
-		popOver.add(new JLabel("<html><b>Adicionar Gasto</b></html>"), "wrap, span, align center");
+		popOver.add(new JLabel("<html><b>Adicionar Anotação</b></html>"), "wrap, span, align center");
 		popOver.add(new JLabel("Nome:"), "gaptop 20px");
 		popOver.add(campoNome, "gapleft 15px, wrap");
 		popOver.add(new JLabel("Descrição:"));
@@ -276,7 +276,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 			campoNome.setText((campoNome.getText().replaceAll("'", "")));
 			campoDescricao.setText((campoDescricao.getText().replaceAll("'", "")));
 			campoValor.setText((campoValor.getText().replaceAll("'", "")));
-			campoValor.setText((UtilCoffe.limpaNumeroDecimal(campoValor.getText())));
+			campoValor.setText((UtilCoffe.limpaNumeroDecimalNegativo(campoValor.getText())));
 
 			if(UtilCoffe.vaziu(campoValor.getText()))
 				campoValor.setText("0,00");
@@ -291,7 +291,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 			else if(campoDescricao.getText().length() > 200) {
 				JOptionPane.showMessageDialog(null, "Máximo de 200 caracteres na descrição!");
 			}
-			else if(campoValor.getText().length() > 20 || UtilCoffe.precoToDouble(campoValor.getText()) < 0) {
+			else if(campoValor.getText().length() > 20 || UtilCoffe.precoToDouble(campoValor.getText()) == 0) {
 				JOptionPane.showMessageDialog(null, "Valor inválido!");
 			}
 			else
@@ -338,7 +338,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 						tabela.scrollRectToVisible(new Rectangle(tabela.getCellRect((tabelaModel.getRowCount()-1), 0, true)));
 					}
 					
-					DiarioLog.add(Usuario.INSTANCE.getNome(), "Adicionou o gasto " + campoNome.getText() 
+					DiarioLog.add(Usuario.INSTANCE.getNome(), "Adicionou a anotação " + campoNome.getText() 
 							+ " de valor R$" + campoValor.getText() + ".", 10);
 
 					campoNome.setText("");
@@ -348,7 +348,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 					popOver.dispose();
 
 					NotificationManager.setLocation(2);
-					NotificationManager.showNotification(tabela, "Gasto Adicionado!", 
+					NotificationManager.showNotification(tabela, "Anotação Adicionada!", 
 							new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png"))).setDisplayTime(2000);
 
 				} catch (ClassNotFoundException | SQLException e1) {
@@ -421,7 +421,10 @@ public class PainelGastos extends WebPanel implements ActionListener
 	private class TabelaVendasRenderer extends DefaultTableCellRenderer
 	{
 		private static final long serialVersionUID = 1L;
-		private Color alternate = new Color(206, 220, 249);
+		private Color lucro = new Color(206, 249, 209);
+		private Color lucro_selecionado = new Color(97, 161, 97);
+		private Color gasto = new Color(249, 206, 206);
+		private Color gasto_selecionado = new Color(171, 91, 91);
 		private ImageIcon iconDelete = new ImageIcon(getClass().getClassLoader().getResource("imgs/delete.png"));
 		private JButton bDeletar = new JButton(iconDelete);
 
@@ -434,14 +437,15 @@ public class PainelGastos extends WebPanel implements ActionListener
 			}
 
 			if(isSelected) {
-				cellComponent.setBackground(tabela.getSelectionBackground());
+				if(UtilCoffe.precoToDouble(tabela.getValueAt(row, 4).toString()) >= 0)
+					cellComponent.setBackground(lucro_selecionado);
+				else
+					cellComponent.setBackground(gasto_selecionado);
 			}
-			else if(row % 2 == 0) {
-				cellComponent.setBackground(alternate);
-			}
-			else {
-				cellComponent.setBackground(Color.WHITE);
-			}
+			else if(UtilCoffe.precoToDouble(tabela.getValueAt(row, 4).toString()) >= 0)
+				cellComponent.setBackground(lucro);
+			else
+				cellComponent.setBackground(gasto);
 
 			setHorizontalAlignment(JLabel.CENTER);
 			return cellComponent;
@@ -481,8 +485,8 @@ public class PainelGastos extends WebPanel implements ActionListener
 			if (isPushed) {
 				if(tabela.getSelectedRowCount() == 1)
 				{
-					int opcao = JOptionPane.showConfirmDialog(null, "Essa opção irá deletar o gasto.\n\n"
-							+ "Você tem certeza?\n\n", "Deletar Gasto", JOptionPane.YES_NO_OPTION);
+					int opcao = JOptionPane.showConfirmDialog(null, "Essa opção irá deletar a anotação.\n\n"
+							+ "Você tem certeza?\n\n", "Deletar Anotação", JOptionPane.YES_NO_OPTION);
 
 					if(opcao == JOptionPane.YES_OPTION)
 					{ 
@@ -490,7 +494,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 							Query pega = new Query();
 							pega.executaUpdate("DELETE FROM gastos WHERE `id` = " + tabela.getValueAt(tabela.getSelectedRow(), 0));
 							gastoTotal -= UtilCoffe.precoToDouble(tabela.getValueAt(tabela.getSelectedRow(), 4).toString());
-							DiarioLog.add(Usuario.INSTANCE.getNome(), "Deletou o gasto " + tabela.getValueAt(tabela.getSelectedRow(), 2) 
+							DiarioLog.add(Usuario.INSTANCE.getNome(), "Deletou a anotação " + tabela.getValueAt(tabela.getSelectedRow(), 2) 
 									+ " de valor R$" + tabela.getValueAt(tabela.getSelectedRow(), 4) + ".", 10);	
 							pega.fechaConexao();
 
@@ -501,7 +505,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 							});
 
 							NotificationManager.setLocation(2);
-							NotificationManager.showNotification(tabela, "Gasto Deletado!", 
+							NotificationManager.showNotification(tabela, "Anotação Deletada!", 
 									new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png"))).setDisplayTime(2000);
 							
 							labelGasto.setText("Total: R$" + UtilCoffe.doubleToPreco(gastoTotal));

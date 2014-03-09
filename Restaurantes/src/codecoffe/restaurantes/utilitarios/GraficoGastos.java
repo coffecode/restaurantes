@@ -34,7 +34,7 @@ public class GraficoGastos extends JPanel
 		setMaximumSize(new Dimension(600, 280));
 		setMinimumSize(new Dimension(600, 280));
 
-		XYSeries series1   = new XYSeries("Gastos");
+		XYSeries series1   = new XYSeries("Lucro");
 		GregorianCalendar c = new GregorianCalendar();
 		double[] meses = new double[12];
 		
@@ -53,6 +53,14 @@ public class GraficoGastos extends JPanel
 				Date data = formataDataSQL.parse(pega.getString("data"));
 				meses[data.getMonth()] += UtilCoffe.precoToDouble(pega.getString("valor"));
 			}
+			
+			pega.executaQuery("SELECT total, mes FROM vendas WHERE `data` BETWEEN '" 
+					+ c.get(GregorianCalendar.YEAR) + "-01-01' AND '" + c.get(GregorianCalendar.YEAR) + "-12-31'");
+			
+			while(pega.next())
+			{
+				meses[pega.getInt("mes")] += UtilCoffe.precoToDouble(pega.getString("total"));
+			}
 
 			pega.fechaConexao();			
 		} catch (ClassNotFoundException | SQLException | ParseException e) {
@@ -67,8 +75,8 @@ public class GraficoGastos extends JPanel
 			XYSeriesCollection xyDataset = new XYSeriesCollection();
 			xyDataset.addSeries(series1);
 
-			JFreeChart chart = ChartFactory.createXYLineChart("Relação Gastos x Mês (" + c.get(GregorianCalendar.YEAR) + ")", 
-					"Mês", "Gastos", xyDataset, PlotOrientation.VERTICAL, true, false, false);
+			JFreeChart chart = ChartFactory.createXYLineChart("Relação Lucro x Mês (" + c.get(GregorianCalendar.YEAR) + ")", 
+					"Mês", "Valor R$", xyDataset, PlotOrientation.VERTICAL, true, false, false);
 			chart.setBackgroundPaint(getBackground());
 
 			XYPlot plot = (XYPlot) chart.getPlot();

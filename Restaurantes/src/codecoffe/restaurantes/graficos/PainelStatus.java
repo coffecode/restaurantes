@@ -367,7 +367,7 @@ public class PainelStatus extends WebMenuBar implements ActionListener
 								File file = escolherBackup.getSelectedFile();
 								if(file.getPath().contains(".sql"))
 								{
-									String[] restoreCmd = new String[]{System.getProperty("user.dir") + "\\mysql\\bin\\mysql.exe"
+									String[] restoreCmd = new String[]{/*System.getProperty("user.dir")*/"C:\\Users\\andre\\Desktop\\novo mysql" + "\\mysql\\bin\\mysql.exe"
 											+ " ", "--user=" + "codecoffe", "--password=" + "puc4321", "-e", "source " + file.getPath()};
 									
 							        try {

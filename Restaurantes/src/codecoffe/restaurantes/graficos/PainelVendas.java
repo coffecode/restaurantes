@@ -181,7 +181,7 @@ public class PainelVendas extends JPanel
 		tabbedPane.addTab("Fiados", iconeFinalizar, visualizarFiado, "Todas as dívidas em aberto.");
 		
 		ImageIcon iconeGastos = new ImageIcon(getClass().getClassLoader().getResource("imgs/gastos.png"));
-		tabbedPane.addTab("Gastos", iconeGastos, painelGastos, "Gerenciamento de gastos.");
+		tabbedPane.addTab("Caderno", iconeGastos, painelGastos, "Gerenciamento de anotações.");
 
 		ImageIcon iconeDiario = new ImageIcon(getClass().getClassLoader().getResource("imgs/diario_mini.png"));
 		tabbedPane.addTab("Diário", iconeDiario, painelConsultarDiario, "Registro de todas as ações de funcionários.");	

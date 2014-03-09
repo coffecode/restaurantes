@@ -142,11 +142,13 @@ public class ExportarVendasPDF implements Runnable
 		
 		Font fontCategoria 	= new Font(FontFamily.HELVETICA, 16, Font.BOLD);
 		Font fontVenda 		= new Font(FontFamily.HELVETICA, 10, Font.NORMAL);
+		Font fontVendaRed 		= new Font(FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.RED);
 		Font fontVendaBold = new Font(FontFamily.HELVETICA, 10, Font.BOLD);
 		Font fontVendaBold12 = new Font(FontFamily.HELVETICA, 12, Font.BOLD);
 		Font fontTexto = new Font(FontFamily.HELVETICA, 12, Font.NORMAL);
 		Font fontTextoBold = new Font(FontFamily.HELVETICA, 12, Font.BOLD);
-		
+		Font fontTextoBoldRed = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.RED);
+		Font fontTextoBoldBlue = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.BLUE);
 		
 		Document document = new Document();
 		double totalPeriodo = 0.0;
@@ -442,7 +444,7 @@ public class ExportarVendasPDF implements Runnable
 		    int index = 1;
 		    
 		    escrever = new Paragraph();
-		    escrever.add(new Paragraph("GASTOS / LUCRO", fontCategoria));
+		    escrever.add(new Paragraph("ANOTAÇÕES / LUCRO", fontCategoria));
 		    addEmptyLine(escrever, 1);
 		    document.add(escrever);
 		    
@@ -487,7 +489,7 @@ public class ExportarVendasPDF implements Runnable
 		    while(pega.next())
 		    {
 		    	ThreadUtils.sleepSafely(150);
-		    	labelProgresso.setText("Exportando gasto " + index + " de " + linhasGasto + ".");
+		    	labelProgresso.setText("Exportando anotação " + index + " de " + linhasGasto + ".");
 		    	progressBar.setValue(index);
 		    	
 		    	totalGastos += UtilCoffe.precoToDouble(pega.getString("valor"));
@@ -517,7 +519,15 @@ public class ExportarVendasPDF implements Runnable
 			    cc3.setHorizontalAlignment(Element.ALIGN_CENTER);
 			    table.addCell(cc3);
 			    
-			    PdfPCell cc4 = new PdfPCell(new Paragraph("-" + pega.getString("valor"), fontVenda));
+			    PdfPCell cc4 = null;
+			    if(UtilCoffe.precoToDouble(pega.getString("valor")) < 0)
+			    {
+			    	cc4 = new PdfPCell(new Paragraph(pega.getString("valor"), fontVendaRed));
+			    }
+			    else
+			    {
+			    	cc4 = new PdfPCell(new Paragraph(pega.getString("valor"), fontVenda));
+			    }
 			    cc4.setPadding(5);
 			    cc4.setHorizontalAlignment(Element.ALIGN_CENTER);
 			    table.addCell(cc4);
@@ -532,15 +542,30 @@ public class ExportarVendasPDF implements Runnable
 		    document.add(escrever);
 		    
 		    escrever = new Paragraph();
-		    escrever.add(new Paragraph("Total em Gastos: R$-" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBold));
+		    
+		    if(totalGastos < 0)
+		    	escrever.add(new Paragraph("Total Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldRed));
+		    else
+		    	escrever.add(new Paragraph("Total Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldBlue));
+		    
 		    addEmptyLine(escrever, 1);
 		    
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodo) + " (c/ 10% opcional)", fontTexto));
-		    escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo-totalGastos), fontTextoBold));
+		    
+		    if(totalPeriodo-totalGastos < 0)
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo-totalGastos), fontTextoBoldRed));
+		    else
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo-totalGastos), fontTextoBoldBlue));
+		    
 		    addEmptyLine(escrever, 1);
 		    
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus) + " (s/ 10% opcional)", fontTexto));
-		    escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus-totalGastos), fontTextoBold));
+		    
+		    if(totalPeriodoSemBonus-totalGastos < 0)
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus-totalGastos), fontTextoBoldRed));
+		    else
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus-totalGastos), fontTextoBoldBlue));
+		    
 		    document.add(escrever);
 		    document.newPage();
 		    

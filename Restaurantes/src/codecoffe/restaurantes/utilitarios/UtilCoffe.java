@@ -67,6 +67,20 @@ public abstract class UtilCoffe
 		String limpeza = campo.replaceAll(",", ".");
 		return limpeza.replaceAll("[^\\d.]", "");
 	}
+	
+	public static String limpaNumeroDecimalNegativo(String campo)
+	{
+		if(campo.contains("-"))
+		{
+			String limpeza = campo.replaceAll(",", ".");
+			return "-" + limpeza.replaceAll("[^\\d.]", "");
+		}
+		else
+		{
+			String limpeza = campo.replaceAll(",", ".");
+			return limpeza.replaceAll("[^\\d.]", "");
+		}
+	}
 
 	public static boolean vaziu(String texto)
 	{
