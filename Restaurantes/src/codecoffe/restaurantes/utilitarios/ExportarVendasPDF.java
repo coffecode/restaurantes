@@ -553,18 +553,18 @@ public class ExportarVendasPDF implements Runnable
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodo) + " (c/ 10% opcional)", fontTexto));
 		    
 		    if(totalPeriodo-totalGastos < 0)
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo-totalGastos), fontTextoBoldRed));
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo+totalGastos), fontTextoBoldRed));
 		    else
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo-totalGastos), fontTextoBoldBlue));
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo+totalGastos), fontTextoBoldBlue));
 		    
 		    addEmptyLine(escrever, 1);
 		    
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus) + " (s/ 10% opcional)", fontTexto));
 		    
 		    if(totalPeriodoSemBonus-totalGastos < 0)
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus-totalGastos), fontTextoBoldRed));
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus+totalGastos), fontTextoBoldRed));
 		    else
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus-totalGastos), fontTextoBoldBlue));
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus+totalGastos), fontTextoBoldBlue));
 		    
 		    document.add(escrever);
 		    document.newPage();
