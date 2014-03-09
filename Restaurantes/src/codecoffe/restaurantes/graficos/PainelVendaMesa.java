@@ -8,7 +8,6 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
@@ -64,7 +63,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 public class PainelVendaMesa extends JPanel implements ActionListener, FocusListener, ItemListener
@@ -74,7 +72,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	private JLabel labelQuantidade, labelValor, labelTotal, labelRecebido, labelTroco, labelForma, labelCliente;
 	private JTabbedPane divisaoPainel;
 	private JButton calcular;
-	private DefaultTableModel tabela;
+	private VendasTableModel tabelaModel;
 	private JTable tabelaPedido;
 	private WebTextField campoComentario;
 	private JTextField campoTotal, campoRecebido, campoTroco;
@@ -83,7 +81,6 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	private ProdutosComboBox addProduto;
 	private ArrayList<ProdutosComboBox> addAdicional;
 	private ArrayList<JButton> addRemover;
-	private Venda vendaRapida;
 	private Clientes clienteVenda;
 	private WebPanel adicionaisPainel, adicionaisPainel1;
 	private WebButton adicionarProduto, finalizarVenda, imprimir, flecha1, flecha2, escolherCliente, deletarCliente;
@@ -103,6 +100,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	private AtualizarPainel painelListener;
 	private MesaAlterada mesaListener;
 	private List<Pedido> todosPedidos;
+	private Venda vendaMesa;
 
 	@SuppressWarnings("rawtypes")
 	public PainelVendaMesa(Configuracao cfg, Object modo, CacheTodosProdutos produtos, 
@@ -282,27 +280,9 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		painelProdutos.add(adicionarProduto, "cell 6 0, aligny center, gapleft 40px, span 1 5");
 
 		pedidoPainel = new JPanel(new BorderLayout());
-		pedidoPainel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Pedido"));		
-
-		tabela = new DefaultTableModel() {
-			private static final long serialVersionUID = 1L;
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				if(column == 0 || column == 7)
-					return true;
-
-				return false;
-			}
-		};
-
-		tabela.addColumn("+/-");
-		tabela.addColumn("Nome");
-		tabela.addColumn("Qntd");
-		tabela.addColumn("Pago");
-		tabela.addColumn("Preço");
-		tabela.addColumn("Adicionais");
-		tabela.addColumn("Comentário");
-		tabela.addColumn("Deletar");
+		pedidoPainel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Pedido"));
+		
+		tabelaModel = new VendasTableModel();
 
 		tabelaPedido = new JTable() {
 			private static final long serialVersionUID = 1L;
@@ -320,21 +300,15 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		};
 		
 		tabelaPedido.setFocusable(false);
-		tabelaPedido.setModel(tabela);
+		tabelaPedido.setModel(tabelaModel);
 		tabelaPedido.getColumnModel().getColumn(0).setMinWidth(70);
 		tabelaPedido.getColumnModel().getColumn(0).setMaxWidth(70);
-		tabelaPedido.getColumnModel().getColumn(1).setMinWidth(180);
-		tabelaPedido.getColumnModel().getColumn(1).setMaxWidth(500);
-		tabelaPedido.getColumnModel().getColumn(2).setMinWidth(45);
-		tabelaPedido.getColumnModel().getColumn(2).setMaxWidth(100);
-		tabelaPedido.getColumnModel().getColumn(3).setMinWidth(80);
-		tabelaPedido.getColumnModel().getColumn(3).setMaxWidth(200);				
-		tabelaPedido.getColumnModel().getColumn(4).setMinWidth(80);
-		tabelaPedido.getColumnModel().getColumn(4).setMaxWidth(200);
-		tabelaPedido.getColumnModel().getColumn(5).setMinWidth(200);
-		tabelaPedido.getColumnModel().getColumn(5).setMaxWidth(700);
-		tabelaPedido.getColumnModel().getColumn(6).setMinWidth(200);
-		tabelaPedido.getColumnModel().getColumn(6).setMaxWidth(700);
+		tabelaPedido.getColumnModel().getColumn(1).setPreferredWidth(180);
+		tabelaPedido.getColumnModel().getColumn(2).setPreferredWidth(45);
+		tabelaPedido.getColumnModel().getColumn(3).setPreferredWidth(80);			
+		tabelaPedido.getColumnModel().getColumn(4).setPreferredWidth(80);
+		tabelaPedido.getColumnModel().getColumn(5).setPreferredWidth(200);
+		tabelaPedido.getColumnModel().getColumn(6).setPreferredWidth(200);
 		tabelaPedido.getColumnModel().getColumn(7).setMinWidth(60);
 		tabelaPedido.getColumnModel().getColumn(7).setMaxWidth(65);
 		tabelaPedido.setRowHeight(30);
@@ -832,11 +806,11 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		formataRecibo += (String.format("%-18.18s", "Permanência: "));
 		
 		long minutes = 0;
-		if(vendaRapida != null)
+		if(tabelaModel != null)
 		{
-			if(vendaRapida.getData() != null)
+			if(vendaMesa.getData() != null)
 			{
-				long duration = System.currentTimeMillis() - vendaRapida.getData().getTime();
+				long duration = System.currentTimeMillis() - vendaMesa.getData().getTime();
 				minutes = TimeUnit.MILLISECONDS.toMinutes(duration);
 			}
 		}
@@ -905,7 +879,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		vendaAgora.calculaTotal();
 
 		CacheImpressao criaImpressao = new CacheImpressao(vendaAgora);
-		criaImpressao.getVendaFeita().setData(vendaRapida.getData());
+		criaImpressao.getVendaFeita().setData(vendaMesa.getData());
 		criaImpressao.setTotal(UtilCoffe.doubleToPreco(vendaAgora.getTotal()));
 		criaImpressao.setAtendente(campoFuncionario.getSelectedItem().toString());
 		criaImpressao.setFiado_id(clienteVenda == null ? 0 : clienteVenda.getIdUnico());
@@ -972,7 +946,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 
 	public void termina(boolean delete)
 	{
-		CacheMesaHeader mh = new CacheMesaHeader(mesaID , vendaRapida, UtilCoffe.MESA_LIMPAR);
+		CacheMesaHeader mh = new CacheMesaHeader(mesaID , vendaMesa, UtilCoffe.MESA_LIMPAR);
 		if(config.getModo() == UtilCoffe.SERVER) {
 			mesaListener.atualizarMesa(mh, null);
 		}
@@ -1105,96 +1079,99 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				}				
 				else
 				{
-					if(campoForma.getSelectedItem() != "Fiado" || (campoForma.getSelectedItem() == "Fiado" && !escolherCliente.getText().equals("Escolher") && clienteVenda != null))
-					{						
-						if(campoForma.getSelectedItem() != "Fiado" && Double.parseDouble(campoRecebido.getText().replaceAll(",",".")) < Double.parseDouble(campoTotal.getText().replaceAll(",",".")))
-							campoRecebido.setText(campoTotal.getText());
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							
+							if(campoForma.getSelectedItem() != "Fiado" || (campoForma.getSelectedItem() == "Fiado" && !escolherCliente.getText().equals("Escolher") && clienteVenda != null))
+							{						
+								if(campoForma.getSelectedItem() != "Fiado" && Double.parseDouble(campoRecebido.getText().replaceAll(",",".")) < Double.parseDouble(campoTotal.getText().replaceAll(",",".")))
+									campoRecebido.setText(campoTotal.getText());
 
-						String confirmacao = "";
+								String confirmacao = "";
 
-						if(campoForma.getSelectedItem() == "Fiado")
-						{				
-							String divida = UtilCoffe.doubleToPreco((UtilCoffe.precoToDouble(campoTotal.getText()) - UtilCoffe.precoToDouble(campoRecebido.getText())));						
-							confirmacao = "Valor Total: " + campoTotal.getText() + "\n" + 
-									"Valor Pago: " + campoRecebido.getText() + 
-									"\n\nForma de Pagamento: " + campoForma.getSelectedItem() + "\n\n" +
-									"Será adicionado a dívida de R$" + divida + " na conta de " + escolherCliente.getText() + ".\n" + "\nConfirmar ?";							
-						}
-						else
-						{
-							confirmacao = "Valor Total: " + campoTotal.getText() + "\n" + 
-									"Valor Pago: " + campoRecebido.getText() + "\n(Troco: " + campoTroco.getText() + ")\n\n" + 
-									"Forma de Pagamento: " + campoForma.getSelectedItem() + "\n\n" +
-									"Confirmar ?";							
-						}
-						int opcao = JOptionPane.showConfirmDialog(null, confirmacao, "Confirmar Venda", JOptionPane.YES_NO_OPTION);			
-						if(opcao == JOptionPane.YES_OPTION)
-						{
-							Venda vendaAgora = new Venda();
-
-							for(int i = 0; i < painelDropOut.getComponentCount(); i++)
-							{
-								DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-								vendaAgora.adicionarProduto(UtilCoffe.cloneProdutoVenda(dragL.getProduto()));
-							}
-
-							Calendar c = Calendar.getInstance();
-							Locale locale = new Locale("pt","BR"); 
-							GregorianCalendar calendar = new GregorianCalendar(); 
-							SimpleDateFormat formatador = new SimpleDateFormat("dd'/'MM'/'yyyy' - 'HH':'mm", locale);
-
-							for(int i = 0; i < vendaAgora.getQuantidadeProdutos(); i++)
-							{
-								for(int x = 0; x < tabela.getRowCount(); x++)
+								if(campoForma.getSelectedItem() == "Fiado")
+								{				
+									String divida = UtilCoffe.doubleToPreco((UtilCoffe.precoToDouble(campoTotal.getText()) - UtilCoffe.precoToDouble(campoRecebido.getText())));						
+									confirmacao = "Valor Total: " + campoTotal.getText() + "\n" + 
+											"Valor Pago: " + campoRecebido.getText() + 
+											"\n\nForma de Pagamento: " + campoForma.getSelectedItem() + "\n\n" +
+											"Será adicionado a dívida de R$" + divida + " na conta de " + escolherCliente.getText() + ".\n" + "\nConfirmar ?";							
+								}
+								else
 								{
-									String pega1 = tabela.getValueAt(x, 1).toString();	//f
-									String pega2 = tabela.getValueAt(x, 5).toString();	//f
+									confirmacao = "Valor Total: " + campoTotal.getText() + "\n" + 
+											"Valor Pago: " + campoRecebido.getText() + "\n(Troco: " + campoTroco.getText() + ")\n\n" + 
+											"Forma de Pagamento: " + campoForma.getSelectedItem() + "\n\n" +
+											"Confirmar ?";							
+								}
+								int opcao = JOptionPane.showConfirmDialog(null, confirmacao, "Confirmar Venda", JOptionPane.YES_NO_OPTION);			
+								if(opcao == JOptionPane.YES_OPTION)
+								{
+									Venda vendaAgora = new Venda();
 
-									if(pega1.equals(vendaAgora.getProduto(i).getNome()) && pega2.equals(vendaAgora.getProduto(i).getAllAdicionais()))
+									for(int i = 0; i < painelDropOut.getComponentCount(); i++)
 									{
-										vendaRapida.getProduto(x).setPagos(vendaAgora.getProduto(i).getQuantidade());
-										tabela.setValueAt(vendaRapida.getProduto(x).getPagos(), x, 3);	//f
-										break;
+										DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
+										vendaAgora.adicionarProduto(UtilCoffe.cloneProdutoVenda(dragL.getProduto()));
+									}
+
+									Calendar c = Calendar.getInstance();
+									Locale locale = new Locale("pt","BR"); 
+									GregorianCalendar calendar = new GregorianCalendar(); 
+									SimpleDateFormat formatador = new SimpleDateFormat("dd'/'MM'/'yyyy' - 'HH':'mm", locale);
+
+									for(int i = 0; i < vendaAgora.getQuantidadeProdutos(); i++)
+									{
+										for(int x = 0; x < vendaMesa.getQuantidadeProdutos(); i++)
+										{
+											if(vendaAgora.getProduto(i).compareTo(vendaMesa.getProduto(x)))
+											{
+												vendaMesa.getProduto(x).setPagos(vendaAgora.getProduto(i).getQuantidade());
+												tabelaModel.refreshTable();
+												break;
+											}
+										}
+									}
+
+									CacheMesaHeader mesaAgora			= new CacheMesaHeader(mesaID, vendaMesa, UtilCoffe.MESA_ATUALIZAR2);
+									CacheVendaFeita vendaMesaFeita		= new CacheVendaFeita(vendaAgora, vendaMesa, mesaAgora);
+									
+									vendaMesaFeita.setTotal(campoTotal.getText());
+									vendaMesaFeita.setAtendente(campoFuncionario.getSelectedItem().toString());
+									vendaMesaFeita.setAno(c.get(Calendar.YEAR));
+									vendaMesaFeita.setMes(c.get(Calendar.MONTH));
+									vendaMesaFeita.setDia_mes(c.get(Calendar.DAY_OF_MONTH));
+									vendaMesaFeita.setDia_semana(c.get(Calendar.DAY_OF_WEEK));
+									vendaMesaFeita.setHorario(formatador.format(calendar.getTime()));
+									vendaMesaFeita.setForma_pagamento(campoForma.getSelectedItem().toString());
+									vendaMesaFeita.setValor_pago(campoRecebido.getText());
+									vendaMesaFeita.setTroco(campoTroco.getText());
+									vendaMesaFeita.setFiado_id(clienteVenda == null ? 0 : clienteVenda.getIdUnico());
+									vendaMesaFeita.setCaixa((mesaID+1));
+									vendaMesaFeita.setDelivery("0,00");
+									vendaMesaFeita.setClasse(UtilCoffe.CLASSE_VENDA_MESA);
+									vendaMesaFeita.getVendaFeita().setData(vendaMesa.getData());
+									
+									if(adicionarDezPorcento.isSelected())
+										vendaMesaFeita.setDezporcento(UtilCoffe.doubleToPreco(taxaOpcional));
+									else
+										vendaMesaFeita.setDezporcento(UtilCoffe.doubleToPreco(0.0));
+
+									if(config.getModo() == UtilCoffe.SERVER) {
+										enviarVenda(vendaMesaFeita, null);
+									}
+									else {
+										((Client) modoPrograma).enviarObjeto(vendaMesaFeita);
 									}
 								}
 							}
-
-							CacheMesaHeader mesaAgora			= new CacheMesaHeader(mesaID, vendaRapida, UtilCoffe.MESA_ATUALIZAR2);
-							CacheVendaFeita vendaMesaFeita		= new CacheVendaFeita(vendaAgora, vendaRapida, mesaAgora);
-							
-							vendaMesaFeita.setTotal(campoTotal.getText());
-							vendaMesaFeita.setAtendente(campoFuncionario.getSelectedItem().toString());
-							vendaMesaFeita.setAno(c.get(Calendar.YEAR));
-							vendaMesaFeita.setMes(c.get(Calendar.MONTH));
-							vendaMesaFeita.setDia_mes(c.get(Calendar.DAY_OF_MONTH));
-							vendaMesaFeita.setDia_semana(c.get(Calendar.DAY_OF_WEEK));
-							vendaMesaFeita.setHorario(formatador.format(calendar.getTime()));
-							vendaMesaFeita.setForma_pagamento(campoForma.getSelectedItem().toString());
-							vendaMesaFeita.setValor_pago(campoRecebido.getText());
-							vendaMesaFeita.setTroco(campoTroco.getText());
-							vendaMesaFeita.setFiado_id(clienteVenda == null ? 0 : clienteVenda.getIdUnico());
-							vendaMesaFeita.setCaixa((mesaID+1));
-							vendaMesaFeita.setDelivery("0,00");
-							vendaMesaFeita.setClasse(UtilCoffe.CLASSE_VENDA_MESA);
-							vendaMesaFeita.getVendaFeita().setData(vendaRapida.getData());
-							
-							if(adicionarDezPorcento.isSelected())
-								vendaMesaFeita.setDezporcento(UtilCoffe.doubleToPreco(taxaOpcional));
 							else
-								vendaMesaFeita.setDezporcento(UtilCoffe.doubleToPreco(0.0));
-
-							if(config.getModo() == UtilCoffe.SERVER) {
-								enviarVenda(vendaMesaFeita, null);
+							{
+								JOptionPane.showMessageDialog(null, "Escolha um cliente antes!");
 							}
-							else {
-								((Client) modoPrograma).enviarObjeto(vendaMesaFeita);
-							}
-						}							
-					}
-					else
-					{
-						JOptionPane.showMessageDialog(null, "Escolha um cliente antes!");
-					}						
+						}
+					});					
 				}					
 			}
 		}
@@ -1217,8 +1194,6 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 					resultado.replaceAll(",", ".");
 					campoTroco.setText(resultado);					
 				}
-
-				//((JFrame) SwingUtilities.getWindowAncestor(this)).getRootPane().setDefaultButton(finalizarVenda);
 			}
 
 			finalizarVenda.requestFocus();
@@ -1257,25 +1232,21 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				String limpeza = UtilCoffe.limpaNumero(campoQuantidade.getText());
 				if(!UtilCoffe.vaziu(limpeza) && limpeza.length() < 6)
 				{
-					int sizeAntes = vendaRapida.getQuantidadeProdutos();
-					int ultimaIndex = 0;
+					int sizeAntes = vendaMesa.getQuantidadeProdutos();
 
 					if(Integer.parseInt(limpeza) > 0)
 					{
-						if(vendaRapida.getQuantidadeProdutos() <= 0)
-							vendaRapida.setData(new Date());
+						if(vendaMesa.getQuantidadeProdutos() <= 0)
+							vendaMesa.setData(new Date());
 						
 						produto.setQuantidade(Integer.parseInt(limpeza), 0);
-						ultimaIndex = vendaRapida.adicionarProduto(produto);
+						vendaMesa.adicionarProduto(produto);
+						tabelaModel.refreshTable();
 						dragAdicionaProduto(produto);
 
-						if(sizeAntes == vendaRapida.getQuantidadeProdutos())
+						if(sizeAntes == vendaMesa.getQuantidadeProdutos())
 						{
-							double total = vendaRapida.getProduto(ultimaIndex).getTotalProduto()*vendaRapida.getProduto(ultimaIndex).getQuantidade();
-							tabela.setValueAt(UtilCoffe.doubleToPreco(total), ultimaIndex, 4);
-							tabela.setValueAt(vendaRapida.getProduto(ultimaIndex).getQuantidade(), ultimaIndex, 2);						
-
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaRapida, UtilCoffe.MESA_ATUALIZAR, 
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 
 													Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
 							if(config.getModo() == UtilCoffe.SERVER) {
 								mesaListener.atualizarMesa(mh, null);
@@ -1286,18 +1257,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						}
 						else
 						{
-							Vector<String> newLinha = new Vector<String>();
-							newLinha.add("");
-							newLinha.add(produto.getNome());
-							newLinha.add("" + produto.getQuantidade());
-							newLinha.add("0");						
-							newLinha.add(UtilCoffe.doubleToPreco((produto.getTotalProduto() * Integer.parseInt(limpeza))));
-							newLinha.add(produto.getAllAdicionais());
-							newLinha.add(produto.getComentario());
-							newLinha.add("");
-							tabela.addRow(newLinha);
-
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaRapida, UtilCoffe.MESA_ADICIONAR, 
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ADICIONAR, 
 									Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
 							
 							if(config.getModo() == UtilCoffe.SERVER) {
@@ -1430,18 +1390,17 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		public Object getCellEditorValue() 
 		{
 			if (isPushed) {
-				if(vendaRapida.getQuantidadeProdutos() <= 0)
+				if(vendaMesa.getQuantidadeProdutos() <= 0)
 				{
-					tabela.setRowCount(0);
+					tabelaModel.refreshTable();
 					isPushed = false;
 					return new String(label);		    		
 				}
 				if(tabelaPedido.getSelectedRowCount() == 1)
 				{
 					boolean continua = true;
-					String pegaLixo = tabela.getValueAt(tabelaPedido.getSelectedRow(), 2).toString();
-					int quantidadeDeletar = Integer.parseInt(pegaLixo);
-					int fazendo = verificaStatusPedido((mesaID+1), vendaRapida.getProduto(tabelaPedido.getSelectedRow()));
+					int quantidadeDeletar = tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()).getQuantidade();
+					int fazendo = verificaStatusPedido((mesaID+1), tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()));
 
 					if(fazendo > 0)
 					{
@@ -1456,7 +1415,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						for(int i = 0; i < painelDropOut.getComponentCount(); i++)
 						{	  
 							DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-							if(dragL.getProduto().compareTo(vendaRapida.getProduto(tabelaPedido.getSelectedRow())))
+							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
 							{
 								painelDropOut.remove(i);
 								quantidadeDeletar--;
@@ -1470,7 +1429,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
 						{
 							DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
-							if(dragL.getProduto().compareTo(vendaRapida.getProduto(tabelaPedido.getSelectedRow())))
+							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
 							{
 								painelDropOut.remove(0);
 								quantidadeDeletar--;
@@ -1482,7 +1441,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 							for(int i = 0; i < painelDropIn.getComponentCount(); i++)
 							{ 
 								DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
-								if(dragL.getProduto().compareTo(vendaRapida.getProduto(tabelaPedido.getSelectedRow())))
+								if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
 								{
 									painelDropIn.remove(i);
 									quantidadeDeletar--;
@@ -1497,7 +1456,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
 						{
 							DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
-							if(dragL.getProduto().compareTo(vendaRapida.getProduto(tabelaPedido.getSelectedRow())))
+							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
 							{
 								painelDropIn.remove(0);
 								quantidadeDeletar--;
@@ -1506,12 +1465,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						
 						if(tabelaPedido.getSelectedRow() >= 0 && tabelaPedido.getSelectedRowCount() == 1) 
 						{
-							ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(vendaRapida.getProduto(tabelaPedido.getSelectedRow()));
-							vendaRapida.removerProdutoIndex(tabelaPedido.getSelectedRow());
-							vendaRapida.calculaTotal();
+							ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()));
+							tabelaModel.removeRow(tabelaPedido.getSelectedRow());
+							vendaMesa.calculaTotal();
 							mesaListener.atualizarMesa(mesaID);
 							
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaRapida, 
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, 
 									UtilCoffe.MESA_DELETAR, prod.getQuantidade(), campoFuncionario.getSelectedItem().toString());
 							
 							if(config.getModo() == UtilCoffe.SERVER) {
@@ -1541,31 +1500,14 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 							campoTotal.setText(UtilCoffe.doubleToPreco(total));
 
 						atualizarCampoRecibo();
-
-						if(tabela.getRowCount() == 1)
-						{
-							SwingUtilities.invokeLater(new Runnable() {  
-								public void run() {  
-									tabela.setNumRows(0);
-									painelDropOut.revalidate();
-									painelDropOut.repaint();
-									painelDropIn.revalidate();
-									painelDropIn.repaint();
-								}  
-							});   
-						}
-						else
-						{
-							SwingUtilities.invokeLater(new Runnable() {  
-								public void run() {  
-									tabela.removeRow(tabelaPedido.getSelectedRow());
-									painelDropOut.revalidate();
-									painelDropOut.repaint();
-									painelDropIn.revalidate();
-									painelDropIn.repaint();
-								}  
-							});
-						}	
+						SwingUtilities.invokeLater(new Runnable() {  
+							public void run() {  
+								painelDropOut.revalidate();
+								painelDropOut.repaint();
+								painelDropIn.revalidate();
+								painelDropIn.repaint();
+							}  
+						});
 					}
 				}
 			}
@@ -1586,10 +1528,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	public synchronized void setMesa(int mesa, Venda v)
 	{
 		mesaID = mesa;
-		vendaRapida = v;
+		vendaMesa = v;
+		tabelaModel.setProdutoVenda(vendaMesa.getProdutos());
 
 		SwingUtilities.invokeLater(new Runnable() {  
 			public void run() {
+				tabelaModel.refreshTable();
 				adicionarDezPorcento.setSelected(false);
 				campoValor.setText("");
 				campoQuantidade.setText("1");
@@ -1615,24 +1559,9 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				addProduto.requestFocus();
 				taxaOpcional = 0.0;
 				adicionarDezPorcento.setText("<html>+ 10% Opcional: <br>(R$0,00)</html>");
-
 				divisaoPainel.setTitleAt(0, config.getTipoNome() + " " + (mesaID+1));
-				tabela.setNumRows(0);
-
-				for(int i = 0; i < vendaRapida.getQuantidadeProdutos(); i++)
-				{
-					dragAdicionaProduto(vendaRapida.getProduto(i));
-
-					Vector<String> linha = new Vector<String>();
-					linha.add("");
-					linha.add(vendaRapida.getProduto(i).getNome());
-					linha.add("" + vendaRapida.getProduto(i).getQuantidade());
-					linha.add("" + vendaRapida.getProduto(i).getPagos());
-					linha.add(UtilCoffe.doubleToPreco((vendaRapida.getProduto(i).getTotalProduto() * vendaRapida.getProduto(i).getQuantidade())));
-					linha.add(vendaRapida.getProduto(i).getAllAdicionais());
-					linha.add(vendaRapida.getProduto(i).getComentario());
-					linha.add("");
-					tabela.addRow(linha);							
+				for(int i = 0; i < vendaMesa.getQuantidadeProdutos(); i++) {
+					dragAdicionaProduto(vendaMesa.getProduto(i));						
 				}		    		  
 			}  
 		});
@@ -1710,19 +1639,19 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 					{
 						SwingUtilities.invokeLater(new Runnable() {  
 							public void run() {  
-								if(linha < vendaRapida.getQuantidadeProdutos() && linha >= 0)
+								if(linha < tabelaModel.getRowCount() && linha >= 0)
 								{
-									vendaRapida.getProduto(linha).setQuantidade(1, 1);
-									double total = vendaRapida.getProduto(linha).getTotalProduto()*vendaRapida.getProduto(linha).getQuantidade();
-									tabela.setValueAt(UtilCoffe.doubleToPreco(total), linha, 4);
-									tabela.setValueAt(vendaRapida.getProduto(linha).getQuantidade(), linha, 2);
-
-									ProdutoVenda maisUm = UtilCoffe.cloneProdutoVenda(vendaRapida.getProduto(linha));
+									tabelaModel.getProdutoVenda(linha).setQuantidade(1, 1);
+									tabelaModel.getProdutoVenda(linha).calcularPreco();
+									tabelaModel.refreshTable();
+									vendaMesa.calculaTotal();
+									
+									ProdutoVenda maisUm = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
 									maisUm.setQuantidade(1, 0);
 									dragAdicionaProduto(maisUm);
 
 									mesaListener.atualizarMesa(mesaID);
-									CacheMesaHeader mh = new CacheMesaHeader(mesaID, maisUm, vendaRapida, UtilCoffe.MESA_ATUALIZAR, 1, campoFuncionario.getSelectedItem().toString());
+									CacheMesaHeader mh = new CacheMesaHeader(mesaID, maisUm, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 1, campoFuncionario.getSelectedItem().toString());
 									if(config.getModo() == UtilCoffe.SERVER) {
 										mesaListener.atualizarMesa(mh, null);
 									}
@@ -1737,12 +1666,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 					{
 						SwingUtilities.invokeLater(new Runnable() {  
 							public void run() {  
-								if(linha < vendaRapida.getQuantidadeProdutos() && linha >= 0)
+								if(linha < tabelaModel.getRowCount() && linha >= 0)
 								{
 									boolean continua = true;
-									int fazendo = verificaStatusPedido((mesaID+1), vendaRapida.getProduto(linha));
+									int fazendo = verificaStatusPedido((mesaID+1), tabelaModel.getProdutoVenda(linha));
 
-									if(fazendo >= vendaRapida.getProduto(linha).getQuantidade())
+									if(fazendo >= tabelaModel.getProdutoVenda(linha).getQuantidade())
 									{
 										int opcao = JOptionPane.showConfirmDialog(null, "Esse produto já está marcado como Fazendo na cozinha."
 												+ "\n\nVocê tem certeza que quer deletar?\n\n", "Deletar Produto", JOptionPane.YES_NO_OPTION);
@@ -1753,8 +1682,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 									if(continua)
 									{
 										boolean deletar_all = true;
-										if(vendaRapida.getProduto(linha).getQuantidade() > 1)
-										{
+										if(tabelaModel.getProdutoVenda(linha).getQuantidade() > 1) {
 											deletar_all = false;
 										}
 
@@ -1762,7 +1690,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 										for(int i = 0; i < painelDropOut.getComponentCount(); i++)
 										{	  
 											DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-											if(dragL.getProduto().compareTo(vendaRapida.getProduto(linha)))
+											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
 											{
 												painelDropOut.remove(i);
 												quantidadeDeletar = 0;
@@ -1773,7 +1701,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 										if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
 										{
 											DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
-											if(dragL.getProduto().compareTo(vendaRapida.getProduto(linha)))
+											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
 											{
 												painelDropOut.remove(0);
 												quantidadeDeletar = 0;
@@ -1785,7 +1713,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 											for(int i = 0; i < painelDropIn.getComponentCount(); i++)
 											{ 
 												DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
-												if(dragL.getProduto().compareTo(vendaRapida.getProduto(linha)))
+												if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
 												{
 													painelDropIn.remove(i);
 													quantidadeDeletar = 0;
@@ -1797,7 +1725,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 										if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
 										{
 											DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
-											if(dragL.getProduto().compareTo(vendaRapida.getProduto(linha)))
+											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
 											{
 												painelDropIn.remove(0);
 												quantidadeDeletar = 0;
@@ -1811,39 +1739,31 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 
 										if(deletar_all)
 										{
-											ProdutoVenda pv = UtilCoffe.cloneProdutoVenda(vendaRapida.getProduto(linha));
-											vendaRapida.removerProdutoIndex(linha);
-											vendaRapida.calculaTotal();
+											ProdutoVenda pv = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
+											tabelaModel.removeRow(linha);
+											vendaMesa.calculaTotal();
 											mesaListener.atualizarMesa(mesaID);
 
-											CacheMesaHeader mh = new CacheMesaHeader(mesaID, pv, vendaRapida, UtilCoffe.MESA_DELETAR, 1);
+											CacheMesaHeader mh = new CacheMesaHeader(mesaID, pv, vendaMesa, UtilCoffe.MESA_DELETAR, 1);
 											if(config.getModo() == UtilCoffe.SERVER) {
 												mesaListener.atualizarMesa(mh, null);
 											}
 											else {
 												((Client) modoPrograma).enviarObjeto(mh);
 											}
-
-											if(tabela.getRowCount() == 1) {
-												tabela.setNumRows(0);
-											}
-											else {
-												tabela.removeRow(linha);
-											}
 										}
 										else
 										{
-											ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(vendaRapida.getProduto(linha));
+											ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
 											prod.setQuantidade(1, 0);
 
-											vendaRapida.getProduto(linha).setQuantidade(1, 2);
-											double total = vendaRapida.getProduto(linha).getTotalProduto()*vendaRapida.getProduto(linha).getQuantidade();
-											tabela.setValueAt(UtilCoffe.doubleToPreco(total), linha, 4);
-											tabela.setValueAt(vendaRapida.getProduto(linha).getQuantidade(), linha, 2);
-											vendaRapida.calculaTotal();
+											tabelaModel.getProdutoVenda(linha).setQuantidade(1, 2);
+											tabelaModel.getProdutoVenda(linha).calcularPreco();
+											tabelaModel.refreshTable();
+											vendaMesa.calculaTotal();
 											mesaListener.atualizarMesa(mesaID);
 
-											CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaRapida, UtilCoffe.MESA_ATUALIZAR, -1);
+											CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, UtilCoffe.MESA_ATUALIZAR, -1);
 											if(config.getModo() == UtilCoffe.SERVER) {
 												mesaListener.atualizarMesa(mh, null);
 											}
@@ -1893,8 +1813,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			add(menosProduto);
 		}
 
-		public void setLinha(int li)
-		{
+		public void setLinha(int li) {
 			linha = li;
 		}
 	}
@@ -2129,7 +2048,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						}			
 					}		
 					
-					setMesa(mesaID, vendaRapida);
+					setMesa(mesaID, vendaMesa);
 					mesaListener.atualizarMesa(mesaID);
 					termina(false);					
 				}

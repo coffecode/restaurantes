@@ -856,6 +856,9 @@ public class PainelClientes extends JPanel implements ActionListener
    			  pegaResposta = pegaResposta.replaceAll("[^0-9.,]+","");
    			  pegaResposta = pegaResposta.replaceAll(",",".");
    			  
+   			  if(UtilCoffe.vaziu(pegaResposta))
+   				pegaResposta = "0";
+   			  
    			  double resposta = Double.parseDouble(pegaResposta);
    			  double deduzindo = resposta;
    			  

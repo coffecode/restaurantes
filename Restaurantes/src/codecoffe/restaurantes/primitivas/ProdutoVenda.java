@@ -150,6 +150,10 @@ public class ProdutoVenda extends Produto implements Serializable
 		return (this.preco + this.totalProduto);
 	}
 	
+	public double getTotalProduto2() {
+		return (this.preco + this.totalProduto)*this.quantidade;
+	}
+	
 	public void setPagos(int setar) {
 		this.pagos += setar;
 	}

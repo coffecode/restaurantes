@@ -14,6 +14,14 @@ public class Venda implements Serializable
 
 	public Venda() {}
 
+	public ArrayList<ProdutoVenda> getProdutos() {
+		return produtos;
+	}
+
+	public void setProdutos(ArrayList<ProdutoVenda> produtos) {
+		this.produtos = produtos;
+	}
+
 	public void clear()
 	{
 		this.produtos.clear();
