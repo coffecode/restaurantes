@@ -29,7 +29,6 @@ import com.alee.laf.StyleConstants;
 import com.alee.laf.panel.WebPanel;
 import com.alee.managers.tooltip.TooltipManager;
 import com.alee.managers.tooltip.TooltipWay;
-import com.alee.utils.ThreadUtils;
 
 public class PainelPedido extends WebPanel
 {
@@ -118,19 +117,6 @@ public class PainelPedido extends WebPanel
 						pedidoAtt.setStatus(UtilCoffe.PEDIDO_FAZENDO);
 						pedidoAtt.setHeader(UtilCoffe.PEDIDO_STATUS);
 						cozinhaListener.pedidoAlterado(pedidoAtt);
-						
-						new Thread(new Runnable() {
-							public void run()
-							{
-								while(true)
-								{
-									ThreadUtils.sleepSafely(2000);
-									pedidoAtt.setStatus(UtilCoffe.PEDIDO_FAZENDO);
-									pedidoAtt.setHeader(UtilCoffe.PEDIDO_STATUS);
-									cozinhaListener.pedidoAlterado(pedidoAtt);
-								}
-							}
-						}).start();
 					}
 					else
 					{

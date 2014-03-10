@@ -129,7 +129,7 @@ public class PainelGastos extends WebPanel implements ActionListener
 		adicionarGasto.addActionListener(this);
 		
 		verGraficoGastos = new WebButton();
-		verGraficoGastos.setToolTipText("Gráfico de Anotações");
+		verGraficoGastos.setToolTipText("Gráfico de Lucros");
 		verGraficoGastos.setRolloverDecoratedOnly(true);
 		verGraficoGastos.setPreferredSize(new Dimension(32, 32));
 		verGraficoGastos.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/estatisticas_aba.png")));

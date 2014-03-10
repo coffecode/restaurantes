@@ -236,7 +236,8 @@ public class Servidor implements Runnable
 				} catch (IOException | ClassNotFoundException e) {
 					if(e.getMessage() != null)
 					{
-						if(e.getMessage().contains("Connection reset") || e.getMessage().toLowerCase().contains("socket closed"))
+						if(e.getMessage().contains("Connection reset") || e.getMessage().toLowerCase().contains("socket closed") 
+												|| e.getMessage().toLowerCase().contains("read timed out"))
 						{
 							System.out.println("Cliente desconectado");
 							this.clienteConectado = false;

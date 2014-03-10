@@ -647,8 +647,8 @@ public class PainelCozinha extends JPanel
 						if(p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
 							todosPedidos.get(i).getProduto().setQuantidade(pNovo.getQuantidade(), 0);
 						
-						if(p.getStatus() == UtilCoffe.PEDIDO_DELETADO || p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
-							avisaPedido(p, p.getStatus());
+						//if(p.getStatus() == UtilCoffe.PEDIDO_DELETADO || p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
+							//avisaPedido(p, p.getStatus());
 						
 						todosPedidos.get(i).setUltimaEdicao(new Date());
 						todosPedidos.get(i).setHeader(p.getHeader());
