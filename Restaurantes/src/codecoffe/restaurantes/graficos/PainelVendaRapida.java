@@ -786,8 +786,11 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		
 		if(config.getModo() == UtilCoffe.SERVER)
 			Recibo.gerarNotaVenda(config, criaImpressao);
-		else
+		else {
 			((Client) modoPrograma).enviarObjeto(criaImpressao);
+			JOptionPane.showMessageDialog(null, "Pedido de impressão enviado ao computador principal!", 
+												"Impressão enviada!", JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 
 	@Override

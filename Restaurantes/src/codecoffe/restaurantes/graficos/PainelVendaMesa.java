@@ -806,7 +806,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		formataRecibo += (String.format("%-18.18s", "Permanência: "));
 		
 		long minutes = 0;
-		if(tabelaModel != null)
+		if(vendaMesa != null)
 		{
 			if(vendaMesa.getData() != null)
 			{
@@ -890,8 +890,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		
 		if(config.getModo() == UtilCoffe.SERVER)
 			Recibo.gerarNotaVenda(config, criaImpressao);
-		else
+		else {
 			((Client) modoPrograma).enviarObjeto(criaImpressao);
+			
+			JOptionPane.showMessageDialog(null, "Pedido de impressão enviado ao computador principal!", 
+					"Impressão enviada!", JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 
 	private class DragLabel extends JLabel 

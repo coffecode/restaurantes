@@ -4,6 +4,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 
+import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.eventos.AtualizarPainel;
 import codecoffe.restaurantes.eventos.MesaAlterada;
 import codecoffe.restaurantes.mysql.Query;
@@ -17,15 +18,17 @@ import codecoffe.restaurantes.utilitarios.Header;
 import codecoffe.restaurantes.utilitarios.Usuario;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
+import com.alee.extended.window.WebPopOver;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.scroll.WebScrollPane;
+import com.alee.laf.text.WebTextField;
 
 import java.awt.event.*;
 import java.io.ObjectOutputStream;
 import java.sql.SQLException;
 import java.util.List;
 
-public class PainelMesas extends JPanel implements MesaAlterada
+public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
 {
 	private static final long serialVersionUID = 1L;
 	private JPanel mesasPainel;
@@ -35,6 +38,8 @@ public class PainelMesas extends JPanel implements MesaAlterada
 	private Configuracao config;
 	private AtualizarPainel painelListener;
 	private Object modoPrograma;
+	private JPopupMenu popup;
+	private int mesaTransferir;
 	
 	public PainelMesas(Configuracao cfg, Object modo, List<Venda> mesas, AtualizarPainel listener)
 	{
@@ -42,6 +47,13 @@ public class PainelMesas extends JPanel implements MesaAlterada
 		modoPrograma = modo;
 		vendaMesas = mesas;
 		painelListener = listener;
+		mesaTransferir = -1;
+		
+        popup = new JPopupMenu();
+        JMenuItem menuItem = new JMenuItem("Transferir " + config.getTipoNome());
+        //menuItem.setHorizontalTextPosition(JMenuItem.RIGHT);
+        menuItem.addActionListener(this);
+        popup.add(menuItem);
 		
 		if(config.getTipoPrograma() == UtilCoffe.TIPO_MESA) {
 			mesaOcupada = new ImageIcon(getClass().getClassLoader().getResource("imgs/mesa_ocupada_mini.png"));
@@ -129,14 +141,22 @@ public class PainelMesas extends JPanel implements MesaAlterada
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			BotaoMesa x = (BotaoMesa)e.getSource();
-			painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(x.getId()), 
-																			vendaMesas.get(x.getId())));
-			painelListener.atualizarPainel(new Header(UtilCoffe.ABRIR_MENU, new String("Menu Venda Mesa")));
+            if(!SwingUtilities.isRightMouseButton(e)) {
+    			BotaoMesa x = (BotaoMesa)e.getSource();
+    			painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(x.getId()), 
+    																			vendaMesas.get(x.getId())));
+    			painelListener.atualizarPainel(new Header(UtilCoffe.ABRIR_MENU, new String("Menu Venda Mesa")));
+            }
 		}
 
 		@Override
-		public void mouseReleased(MouseEvent e) {}
+		public void mouseReleased(MouseEvent e) {
+            if(SwingUtilities.isRightMouseButton(e)) {
+            	BotaoMesa x = (BotaoMesa)e.getSource();
+            	mesaTransferir = x.getId();
+                popup.show(e.getComponent(), e.getX(), e.getY());
+            }
+		}
 
 		@Override
 		public void mouseEntered(MouseEvent e) {
@@ -374,6 +394,106 @@ public class PainelMesas extends JPanel implements MesaAlterada
 						}	
 					}
 				}
+			}
+		}
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if(mesaTransferir != -1)
+		{	
+			if(vendaMesas.get(mesaTransferir).getQuantidadeProdutos() <= 0) {
+				JOptionPane.showMessageDialog(null, "Essa mesa está vazia!", "Erro", JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+				final WebPopOver popOver = new WebPopOver(topFrame);
+	            popOver.setCloseOnFocusLoss(false);
+	            popOver.setModal(true);
+	            popOver.setMargin(10);
+	            popOver.setLayout(new MigLayout());
+	            
+	            popOver.add(new JLabel("<html><b>Transferência da " + config.getTipoNome() + " " + (mesaTransferir+1) +"</b></html>"), "span, wrap");
+	            
+	            popOver.add(new JLabel("Digite para qual " + config.getTipoNome() + " você deseja transferir:"), "gaptop 15px, span, wrap");
+	            
+	            final WebTextField mesaCampo = new WebTextField();
+	            mesaCampo.setMargin(5, 5, 5, 5);
+	            mesaCampo.setHorizontalAlignment(SwingConstants.CENTER);
+	            mesaCampo.setPreferredSize(new Dimension(60, 35));
+	            popOver.add(mesaCampo, "gaptop 10px, align center, wrap");
+	            
+	            final WebButton botao = new WebButton("Transferir");
+	            botao.setRolloverShine(true);
+	            botao.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png")));
+	            botao.setPreferredSize(new Dimension(100, 35));
+	            botao.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						try {
+							mesaCampo.setText(UtilCoffe.limpaNumero(mesaCampo.getText()));
+							
+							if(UtilCoffe.vaziu(mesaCampo.getText()))
+								mesaCampo.setText("0");
+							
+							int novaMesa = Integer.parseInt(mesaCampo.getText());
+							
+							if(novaMesa > 0 && novaMesa <= config.getMesas() && novaMesa != (mesaTransferir+1))
+							{
+								int confirmacao = JOptionPane.showConfirmDialog(null, "Transferir todos os produtos da " 
+										+ config.getTipoNome() + " " + (mesaTransferir+1) + " para a " + config.getTipoNome() + " " + novaMesa + "."
+										+ "\n\nVocê tem certeza que quer transferir?", "Confirmar Transferência", JOptionPane.YES_NO_OPTION);
+								
+								if(confirmacao == JOptionPane.YES_OPTION)
+								{
+									Query transfere = new Query();
+									transfere.executaUpdate("UPDATE mesas SET mesas_id = " + (novaMesa-1) + " WHERE mesas_id = " + mesaTransferir);
+									transfere.fechaConexao();
+									
+									for(int i = 0; i < vendaMesas.get(mesaTransferir).getQuantidadeProdutos(); i++) {
+										vendaMesas.get((novaMesa-1)).getProdutos().add(UtilCoffe.cloneProdutoVenda(vendaMesas.get(mesaTransferir).getProduto(i)));
+									}
+									
+									vendaMesas.get(mesaTransferir).clear();
+									vendaMesas.get(mesaTransferir).calculaTotal();
+									vendaMesas.get((novaMesa-1)).calculaTotal();
+									
+									atualizarMesa(mesaTransferir);
+									atualizarMesa((novaMesa-1));
+									
+									popOver.dispose();
+									
+									JOptionPane.showMessageDialog(null, config.getTipoNome() + " " + (mesaTransferir+1) 
+											+ " transferida com sucesso para " + config.getTipoNome() + " " + novaMesa, "Sucesso!", JOptionPane.PLAIN_MESSAGE);
+									mesaTransferir = -1;		
+								}
+							}
+							else
+								JOptionPane.showMessageDialog(null, "Mesa Inválida", "Erro", JOptionPane.ERROR_MESSAGE);
+						} catch (NumberFormatException | HeadlessException | ClassNotFoundException | SQLException e1) {
+							e1.printStackTrace();
+							new PainelErro(e1);
+						}
+					}
+	            });
+	            
+	            popOver.add(botao, "gaptop 15px, split 2, span, align center");
+	            
+	            final WebButton fechar = new WebButton("Cancelar");
+	            fechar.setRolloverShine(true);
+	            fechar.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_cancel.png")));
+	            fechar.setPreferredSize(new Dimension(100, 35));
+	            fechar.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						mesaTransferir = -1;
+						popOver.dispose();
+					}
+	            });
+	            
+	            popOver.add(fechar, "gapleft 15px");
+	            popOver.show(topFrame);
 			}
 		}
 	}

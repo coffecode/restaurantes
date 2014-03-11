@@ -1,4 +1,5 @@
 package codecoffe.restaurantes.utilitarios;
+//import java.awt.Desktop;
 import java.awt.print.PrinterJob;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -86,12 +87,13 @@ public class Recibo
 			DocFlavor docFlavor = DocFlavor.INPUT_STREAM.AUTOSENSE; 
 
 			// Atributos de impressão do documento   
-			HashDocAttributeSet attributes = new HashDocAttributeSet();   
+			HashDocAttributeSet attributes = new HashDocAttributeSet();
 
 			// Arquivo para imprimir
 			String nomeRecibo = "codecoffe/recibo_";
 			nomeRecibo += mesa;
 			nomeRecibo += ".txt";
+			
 			FileInputStream fi = new FileInputStream(nomeRecibo);   
 
 			// Cria um Doc para impressão a partir do arquivo exemplo.txt   
@@ -446,6 +448,7 @@ public class Recibo
 			}
 			else {
 				new Recibo().imprimir2(cfg, v.getCaixa());
+				//Desktop.getDesktop().print(new File("codecoffe/recibo_0.txt")); 
 			}
 		}
 		catch(IOException error)
