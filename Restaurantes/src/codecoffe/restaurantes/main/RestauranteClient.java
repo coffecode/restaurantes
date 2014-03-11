@@ -6,8 +6,10 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
+import com.alee.managers.notification.NotificationManager;
 import com.alee.utils.ThreadUtils;
 
 import codecoffe.restaurantes.eventos.AtualizarPainel;
@@ -255,11 +257,30 @@ public class RestauranteClient implements SocketsRecebido, AtualizarPainel
 		{
 			CacheMesaHeader m = (CacheMesaHeader) dataRecebida;
 			
-			painelMesas.setMesa(m.getMesaId(), m.getMesaVenda());
-			painelMesas.atualizarMesa(m.getMesaId());
-			
-			if(Usuario.INSTANCE.getOlhando() == m.getMesaId())
-				painelVendaMesa.setMesa(m.getMesaId(), painelMesas.getMesa(m.getMesaId()));
+			if(m.getHeader() == UtilCoffe.MESA_TRANSFERIR)
+			{
+				painelMesas.setMesa(m.getMesaId(), new Venda());
+				painelMesas.setMesa(m.getHeaderExtra(), m.getMesaVenda());
+				painelMesas.atualizarMesa(m.getMesaId());
+				painelMesas.atualizarMesa(m.getHeaderExtra());
+				
+				if(Usuario.INSTANCE.getOlhando() == m.getMesaId())
+					painelVendaMesa.setMesa(m.getMesaId(), painelMesas.getMesa(m.getMesaId()));
+				else if(Usuario.INSTANCE.getOlhando() == m.getHeaderExtra())
+					painelVendaMesa.setMesa(m.getHeaderExtra(), painelMesas.getMesa(m.getHeaderExtra()));
+				
+				NotificationManager.setLocation(2);
+				NotificationManager.showNotification(framePrincipal, config.getTipoNome() + " " + (m.getMesaId()+1) + " transferida para " + (m.getHeaderExtra()+1), 
+						new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png"))).setDisplayTime(2000);
+			}
+			else
+			{
+				painelMesas.setMesa(m.getMesaId(), m.getMesaVenda());
+				painelMesas.atualizarMesa(m.getMesaId());
+				
+				if(Usuario.INSTANCE.getOlhando() == m.getMesaId())
+					painelVendaMesa.setMesa(m.getMesaId(), painelMesas.getMesa(m.getMesaId()));
+			}
 			
 			if(m.getHeader() == UtilCoffe.MESA_ERROR)
 				JOptionPane.showMessageDialog(null, "Houve um erro no programa principal e não foi possível fazer a ação!");

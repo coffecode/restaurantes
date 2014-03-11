@@ -520,7 +520,6 @@ public class PainelClientes extends JPanel implements ActionListener
 
 			} catch (IOException e1) {
 				e1.printStackTrace();
-				new PainelErro(e1);
 			} finally {
 				labelLoad.setVisible(false);
 			}	

@@ -8,18 +8,17 @@ import javax.swing.table.AbstractTableModel;
 import codecoffe.restaurantes.primitivas.ProdutoVenda;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
-public class VendasTableModel extends AbstractTableModel
+public class VendasTableModelRapida extends AbstractTableModel
 {
 	private static final long serialVersionUID = 1L;
-	private String[] colunas = {"+/-", "Nome", "Qntd", "Preço", "Pago", "Adicionais", "Comentário", "Deletar"};
+	private String[] colunas = {"+/-", "Nome", "Qntd", "Preço", "Adicionais", "Comentário", "Deletar"};
 	private List<ProdutoVenda> produtoVenda;
 	
-	public VendasTableModel() {
+	public VendasTableModelRapida() {
 		this.produtoVenda = new ArrayList<ProdutoVenda>();
 	}
 	
-	public VendasTableModel(List<ProdutoVenda> produtoVenda) {
-		super();
+	public VendasTableModelRapida(List<ProdutoVenda> produtoVenda) {
 		this.produtoVenda = produtoVenda;
 	}
 
@@ -50,7 +49,7 @@ public class VendasTableModel extends AbstractTableModel
 	}
 	
 	public boolean isCellEditable(int linha, int coluna) {
-	    if(coluna == 0 || coluna == 7)
+	    if(coluna == 0 || coluna == 6)
 	    	return true;
 		
 	    return false;
@@ -78,10 +77,9 @@ public class VendasTableModel extends AbstractTableModel
 			case 1: return this.produtoVenda.get(rowIndex).getNome();
 			case 2: return this.produtoVenda.get(rowIndex).getQuantidade();
 			case 3: return UtilCoffe.doubleToPreco(this.produtoVenda.get(rowIndex).getTotalProduto2());
-			case 4: return this.produtoVenda.get(rowIndex).getPagos();
-			case 5: return this.produtoVenda.get(rowIndex).getAllAdicionais();
-			case 6: return this.produtoVenda.get(rowIndex).getComentario();
-			case 7: return "";
+			case 4: return this.produtoVenda.get(rowIndex).getAllAdicionais();
+			case 5: return this.produtoVenda.get(rowIndex).getComentario();
+			case 6: return "";
 		}
 		return null;
 	}

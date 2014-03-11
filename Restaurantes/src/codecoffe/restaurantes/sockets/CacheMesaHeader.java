@@ -18,6 +18,21 @@ public class CacheMesaHeader implements Serializable
 		this.header = hd;
 	}
 	
+	public CacheMesaHeader(int id1, int id2, int hd)
+	{
+		this.mesa_id = id1;
+		this.header_extra = id2;
+		this.header = hd;
+	}
+	
+	public CacheMesaHeader(int id1, int id2, int hd, Venda v)
+	{
+		this.mesa_id = id1;
+		this.header_extra = id2;
+		this.header = hd;
+		this.vendaMesa = v;
+	}
+	
 	public CacheMesaHeader(int id, ProdutoVenda p, int hd)
 	{
 		this.produtoMesa = p;

@@ -6,7 +6,6 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
@@ -44,7 +43,6 @@ import com.alee.managers.tooltip.TooltipWay;
 
 import java.awt.event.*;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,7 +50,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 
 public class PainelVendaRapida extends JPanel implements ActionListener, FocusListener, ItemListener
 {
@@ -60,7 +57,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 	private JPanel pedidoPainel, painelProdutos, painelProdutos1, painelPagamento;
 	private JLabel labelQuantidade, labelValor, labelTotal, labelRecebido, labelTroco, labelForma, labelCliente, labelFuncionario;
 	private JTabbedPane divisaoPainel;
-	private DefaultTableModel tabela;
+	private VendasTableModelRapida tabelaModel;
 	private JTable tabelaPedido;
 	private JCheckBox campoEntrega, adicionarDezPorcento;
 	private WebTextField campoComentario;
@@ -70,7 +67,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 	private ProdutosComboBox addProduto;
 	private ArrayList<ProdutosComboBox> addAdicional;
 	private ArrayList<JButton> addRemover;
-	private Venda vendaRapida;
+	private Venda vendaRapidaNova;
 	private Clientes clienteVenda;
 	private WebPanel adicionaisPainel, adicionaisPainel1;
 	private WebButton adicionarProduto, finalizarVenda, imprimir, escolherCliente, deletarCliente, calcular;
@@ -114,7 +111,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		campoQuantidade = new JTextField("1", 2);
 		addAdicional = new ArrayList<>();
 		addRemover = new ArrayList<>();
-		vendaRapida = new Venda();		
+		vendaRapidaNova = new Venda();		
 
 		campoValor = new JTextField();
 		campoValor.setEditable(false);
@@ -255,27 +252,8 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		pedidoPainel = new JPanel(new BorderLayout());
 		pedidoPainel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Pedido"));		
 
-		tabela = new DefaultTableModel() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				if(column == 0 || column == 6)
-					return true;
-
-				return false;
-			}
-		};
-
-		tabela.addColumn("+/-");
-		tabela.addColumn("Nome");
-		tabela.addColumn("Qntd");
-		tabela.addColumn("Preço");
-		tabela.addColumn("Adicionais");
-		tabela.addColumn("Comentário");
-		tabela.addColumn("Deletar");
-
-		tabelaPedido = new JTable() {
+		tabelaModel 	= new VendasTableModelRapida(vendaRapidaNova.getProdutos());
+		tabelaPedido 	= new JTable() {
 			private static final long serialVersionUID = 1L;
 			Color alternate = new Color(206, 220, 249);
 
@@ -291,7 +269,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		};
 		
 		tabelaPedido.setFocusable(false);
-		tabelaPedido.setModel(tabela);
+		tabelaPedido.setModel(tabelaModel);
 		tabelaPedido.getColumnModel().getColumn(0).setMinWidth(70);
 		tabelaPedido.getColumnModel().getColumn(0).setMaxWidth(70);
 		tabelaPedido.getColumnModel().getColumn(1).setMinWidth(205);
@@ -523,46 +501,44 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 				public void actionPerformed(ActionEvent e) {
 					if(e.getSource() == maisProduto)
 					{
-						vendaRapida.getProduto(linha).setQuantidade(1, 1);
-						double total = vendaRapida.getProduto(linha).getTotalProduto()*vendaRapida.getProduto(linha).getQuantidade();
-						tabela.setValueAt(UtilCoffe.doubleToPreco(total), linha, 3);
-						tabela.setValueAt(vendaRapida.getProduto(linha).getQuantidade(), linha, 2);
-						vendaRapida.calculaTotal();
+						tabelaModel.getProdutoVenda(linha).setQuantidade(1, 1);
+						tabelaModel.getProdutoVenda(linha).calcularPreco();
+						tabelaModel.refreshTable();
+						vendaRapidaNova.calculaTotal();
 						
 						if(config.isDezPorcentoRapida()) {
-							taxaOpcional = (vendaRapida.getTotal()*0.10);
+							taxaOpcional = (vendaRapidaNova.getTotal()*0.10);
 							adicionarDezPorcento.setText("+ 10% Opcional (R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")");
 						}
 							
 						if(adicionarDezPorcento.isSelected()) {
-							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaEntrega + taxaOpcional)));	
+							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega + taxaOpcional)));	
 						}
 						else {
-							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaEntrega)));	
+							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));	
 						}
 												
 						atualizarCampoRecibo();
 					}
 					else
 					{
-						if(vendaRapida.getProduto(linha).getQuantidade() > 1)
+						if(tabelaModel.getProdutoVenda(linha).getQuantidade() > 1)
 						{
-							vendaRapida.getProduto(linha).setQuantidade(1, 2);
-							double total = vendaRapida.getProduto(linha).getTotalProduto()*vendaRapida.getProduto(linha).getQuantidade();
-							tabela.setValueAt(UtilCoffe.doubleToPreco(total), linha, 3);
-							tabela.setValueAt(vendaRapida.getProduto(linha).getQuantidade(), linha, 2);
-							vendaRapida.calculaTotal();
+							tabelaModel.getProdutoVenda(linha).setQuantidade(1, 2);
+							tabelaModel.getProdutoVenda(linha).calcularPreco();
+							tabelaModel.refreshTable();
+							vendaRapidaNova.calculaTotal();
 							
 							if(config.isDezPorcentoRapida()) {
-								taxaOpcional = (vendaRapida.getTotal()*0.10);
+								taxaOpcional = (vendaRapidaNova.getTotal()*0.10);
 								adicionarDezPorcento.setText("+ 10% Opcional (R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")");
 							}
 								
 							if(adicionarDezPorcento.isSelected()) {
-								campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaOpcional)));	
+								campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaOpcional)));	
 							}
 							else {
-								campoTotal.setText(UtilCoffe.doubleToPreco(vendaRapida.getTotal()));	
+								campoTotal.setText(UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal()));	
 							}				
 							
 							atualizarCampoRecibo();							
@@ -571,25 +547,23 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 						{
 							SwingUtilities.invokeLater(new Runnable() {  
 								public void run() {
-									if(tabela.getRowCount() > linha)
+									if(tabelaModel.getRowCount() > linha)
 									{
-										vendaRapida.removerProdutoIndex(linha);
-										vendaRapida.calculaTotal();
+										tabelaModel.removeRow(linha);
+										vendaRapidaNova.calculaTotal();
 										atualizarCampoRecibo();
 										
 										if(config.isDezPorcentoRapida()) {
-											taxaOpcional = (vendaRapida.getTotal()*0.10);
+											taxaOpcional = (vendaRapidaNova.getTotal()*0.10);
 											adicionarDezPorcento.setText("+ 10% Opcional (R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")");
 										}
 											
 										if(adicionarDezPorcento.isSelected()) {
-											campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaOpcional)));	
+											campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaOpcional)));	
 										}
 										else {
-											campoTotal.setText(UtilCoffe.doubleToPreco(vendaRapida.getTotal()));	
+											campoTotal.setText(UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal()));	
 										}
-										
-										tabela.removeRow(linha);
 									}
 								}  
 							});
@@ -712,19 +686,19 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 
 		formataRecibo += ("PRODUTO              QTDE  VALOR UN.  VALOR\n");
 
-		for(int i = 0; i < vendaRapida.getQuantidadeProdutos(); i++)
+		for(int i = 0; i < vendaRapidaNova.getQuantidadeProdutos(); i++)
 		{
-			formataRecibo += (String.format("%-20.20s", vendaRapida.getProduto(i).getReferencia()));
-			formataRecibo += (String.format("%4s     ", vendaRapida.getProduto(i).getQuantidade()));
-			formataRecibo += (String.format("%7s       ", UtilCoffe.doubleToPreco(vendaRapida.getProduto(i).getPreco())));
-			formataRecibo += (String.format("%6s     \n", UtilCoffe.doubleToPreco((vendaRapida.getProduto(i).getPreco()*vendaRapida.getProduto(i).getQuantidade()))));
+			formataRecibo += (String.format("%-20.20s", vendaRapidaNova.getProduto(i).getReferencia()));
+			formataRecibo += (String.format("%4s     ", vendaRapidaNova.getProduto(i).getQuantidade()));
+			formataRecibo += (String.format("%7s       ", UtilCoffe.doubleToPreco(vendaRapidaNova.getProduto(i).getPreco())));
+			formataRecibo += (String.format("%6s     \n", UtilCoffe.doubleToPreco((vendaRapidaNova.getProduto(i).getPreco()*vendaRapidaNova.getProduto(i).getQuantidade()))));
 
-			for(int j = 0; j < vendaRapida.getProduto(i).getTotalAdicionais(); j++)
+			for(int j = 0; j < vendaRapidaNova.getProduto(i).getTotalAdicionais(); j++)
 			{
-				formataRecibo += (String.format("%-20.20s", "+" + vendaRapida.getProduto(i).getAdicional(j).getReferencia()));
-				formataRecibo += (String.format("%3s     ", vendaRapida.getProduto(i).getQuantidade()));
-				formataRecibo += (String.format("%5s    ", UtilCoffe.doubleToPreco(vendaRapida.getProduto(i).getAdicional(j).getPreco())));
-				formataRecibo += (String.format("%6s    \n", UtilCoffe.doubleToPreco(vendaRapida.getProduto(i).getAdicional(j).getPreco()*vendaRapida.getProduto(i).getQuantidade())));
+				formataRecibo += (String.format("%-20.20s", "+" + vendaRapidaNova.getProduto(i).getAdicional(j).getReferencia()));
+				formataRecibo += (String.format("%3s     ", vendaRapidaNova.getProduto(i).getQuantidade()));
+				formataRecibo += (String.format("%5s    ", UtilCoffe.doubleToPreco(vendaRapidaNova.getProduto(i).getAdicional(j).getPreco())));
+				formataRecibo += (String.format("%6s    \n", UtilCoffe.doubleToPreco(vendaRapidaNova.getProduto(i).getAdicional(j).getPreco()*vendaRapidaNova.getProduto(i).getQuantidade())));
 			}
 		}            
 
@@ -758,12 +732,12 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 			formataRecibo += ("Taxa de Entrega                  R$" + UtilCoffe.doubleToPreco(taxaEntrega) + "\n");
 
 		formataRecibo += ("                     -------------------\n");
-		formataRecibo += ("Total                            R$" + UtilCoffe.doubleToPreco(vendaRapida.getTotal() + taxaEntrega) + "\n");
+		formataRecibo += ("Total                            R$" + UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal() + taxaEntrega) + "\n");
 		
 		if(config.isDezPorcentoRapida() && taxaEntrega <= 0)
 		{
 			formataRecibo += ("                     ----------------------\n");
-			formataRecibo += ("10% Opcional                     R$" + UtilCoffe.doubleToPreco(vendaRapida.getTotal() + taxaOpcional) + "\n");            	  
+			formataRecibo += ("10% Opcional                     R$" + UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal() + taxaOpcional) + "\n");            	  
 		}
 		
 		formataRecibo += ("===========================\n");
@@ -775,13 +749,13 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 
 	private void criarRecibo()
 	{
-		CacheImpressao criaImpressao = new CacheImpressao(vendaRapida);
-		criaImpressao.setTotal(UtilCoffe.doubleToPreco(vendaRapida.getTotal()));
+		CacheImpressao criaImpressao = new CacheImpressao(vendaRapidaNova);
+		criaImpressao.setTotal(UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal()));
 		criaImpressao.setAtendente(campoFuncionario.getSelectedItem().toString());
 		criaImpressao.setFiado_id(clienteVenda == null ? 0 : clienteVenda.getIdUnico());
 		criaImpressao.setCaixa(0);
 		criaImpressao.setDelivery(UtilCoffe.doubleToPreco(taxaEntrega));
-		criaImpressao.setDezporcento(UtilCoffe.doubleToPreco(vendaRapida.getTotal() + taxaOpcional));
+		criaImpressao.setDezporcento(UtilCoffe.doubleToPreco(vendaRapidaNova.getTotal() + taxaOpcional));
 		criaImpressao.setClasse(UtilCoffe.CLASSE_VENDA_RAPIDA);
 		
 		if(config.getModo() == UtilCoffe.SERVER)
@@ -807,6 +781,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		{
 			escolherCliente.setText("Escolher");
 			clienteVenda = null;
+			atualizarCampoRecibo();
 		}
 		else if(e.getSource() == escolherCliente)
 		{
@@ -815,7 +790,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		}
 		else if(e.getSource() == finalizarVenda)
 		{			
-			if(vendaRapida.getQuantidadeProdutos() > 0)
+			if(vendaRapidaNova.getQuantidadeProdutos() > 0)
 			{
 				if("".equals(campoRecebido.getText().trim()))
 					campoRecebido.setText("0,00");					
@@ -871,7 +846,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 							GregorianCalendar calendar = new GregorianCalendar(); 
 							SimpleDateFormat formatador = new SimpleDateFormat("dd'/'MM'/'yyyy' - 'HH':'mm",locale);
 
-							CacheVendaFeita vendaRapidaFeita = new CacheVendaFeita(vendaRapida);
+							CacheVendaFeita vendaRapidaFeita = new CacheVendaFeita(vendaRapidaNova);
 							vendaRapidaFeita.setTotal(campoTotal.getText());
 							vendaRapidaFeita.setAtendente(campoFuncionario.getSelectedItem().toString());
 							vendaRapidaFeita.setAno(c.get(Calendar.YEAR));
@@ -926,8 +901,6 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 					resultado.replaceAll(",", ".");
 					campoTroco.setText(resultado);					
 				}
-
-				//((JFrame) SwingUtilities.getWindowAncestor(this)).getRootPane().setDefaultButton(finalizarVenda);
 			}
 
 			finalizarVenda.requestFocus();
@@ -946,71 +919,49 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 			}
 			else
 			{
-				Produto p = addProduto.getProdutoSelecionado();
-				ProdutoVenda produto = new ProdutoVenda(p.getNome(), p.getReferencia(), p.getPreco(), p.getIdUnico(), p.getCodigo());
-				
-				if(!UtilCoffe.vaziu(campoComentario.getText()))
-					produto.setComentario(campoComentario.getText());
-
-				if(addAdicional.size() > 0)
-				{
-					for(int x = 0 ; x < addAdicional.size() ; x++)
-					{
-						if(addAdicional.get(x).getProdutoSelecionado() != null)
-						{
-							produto.adicionrAdc(UtilCoffe.cloneProduto(addAdicional.get(x).getProdutoSelecionado()));
-						}
-					}
-				}
-
-				String limpeza = UtilCoffe.limpaNumero(campoQuantidade.getText());
-				if(!UtilCoffe.vaziu(limpeza) && limpeza.length() < 6)
-				{
-					int sizeAntes = vendaRapida.getQuantidadeProdutos();
-					int ultimaIndex = 0;
-
-					if(Integer.parseInt(limpeza) > 0)
-					{
-						produto.setQuantidade(Integer.parseInt(limpeza), 0);
-						ultimaIndex = vendaRapida.adicionarProduto(produto);
-
-						if(sizeAntes == vendaRapida.getQuantidadeProdutos())
-						{
-							String pegaQntd = tabela.getValueAt(ultimaIndex, 2).toString();
-							tabela.setValueAt("" + (Integer.parseInt(pegaQntd) + Integer.parseInt(limpeza)), ultimaIndex, 2);
-							tabela.setValueAt(UtilCoffe.doubleToPreco((produto.getTotalProduto() * (Integer.parseInt(limpeza) 
-									+ Integer.parseInt(pegaQntd)))), ultimaIndex, 3);
-						}
-						else
-						{
-							Vector<Serializable> linha = new Vector<Serializable>();
-							linha.add("");
-							linha.add(produto.getNome());
-							linha.add(produto.getQuantidade());
-							linha.add(UtilCoffe.doubleToPreco((produto.getTotalProduto()*Integer.parseInt(limpeza))));
-							linha.add(produto.getAllAdicionais());
-							linha.add(produto.getComentario());
-							linha.add("Deletar");
-							tabela.addRow(linha);	
-						}
-					}
-				}
-
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						vendaRapida.calculaTotal();
+						Produto p = addProduto.getProdutoSelecionado();
+						ProdutoVenda produto = new ProdutoVenda(p.getNome(), p.getReferencia(), p.getPreco(), p.getIdUnico(), p.getCodigo());
+						
+						if(!UtilCoffe.vaziu(campoComentario.getText()))
+							produto.setComentario(campoComentario.getText());
+
+						if(addAdicional.size() > 0)
+						{
+							for(int x = 0 ; x < addAdicional.size() ; x++)
+							{
+								if(addAdicional.get(x).getProdutoSelecionado() != null)
+								{
+									produto.adicionrAdc(UtilCoffe.cloneProduto(addAdicional.get(x).getProdutoSelecionado()));
+								}
+							}
+						}
+
+						String limpeza = UtilCoffe.limpaNumero(campoQuantidade.getText());
+						if(!UtilCoffe.vaziu(limpeza) && limpeza.length() < 6)
+						{
+							if(Integer.parseInt(limpeza) > 0)
+							{
+								produto.setQuantidade(Integer.parseInt(limpeza), 0);
+								vendaRapidaNova.adicionarProduto(produto);
+								tabelaModel.refreshTable();
+							}
+						}
+						
+						vendaRapidaNova.calculaTotal();
 						
 						if(config.isDezPorcentoRapida()) {
-							taxaOpcional = vendaRapida.getTotal() * 0.10;
+							taxaOpcional = vendaRapidaNova.getTotal() * 0.10;
 							adicionarDezPorcento.setText("+ 10% Opcional (R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")");
 						}
 						
 						if(adicionarDezPorcento.isSelected()) {
-							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaEntrega + taxaOpcional)));
+							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega + taxaOpcional)));
 						}
 						else {
-							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaEntrega)));
+							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));
 						}
 						
 						campoValor.setText("");
@@ -1201,23 +1152,20 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 
 		public Object getCellEditorValue() {
 			if (isPushed) {
-				if(vendaRapida.getQuantidadeProdutos() <= 0)
+				if(vendaRapidaNova.getQuantidadeProdutos() <= 0)
 				{
-					tabela.setRowCount(0);
+					tabelaModel.refreshTable();
 					isPushed = false;
 					return new String(label);		    		
 				}		    	
 				if(tabelaPedido.getSelectedRowCount() == 1)
 				{
-					vendaRapida.removerProdutoIndex(tabelaPedido.getSelectedRow());
-					vendaRapida.calculaTotal();
-					atualizarCampoRecibo();
-
-					campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapida.getTotal() + taxaEntrega)));
-
 					SwingUtilities.invokeLater(new Runnable() {  
 						public void run() {  
-							tabela.removeRow(tabelaPedido.getSelectedRow());
+							tabelaModel.removeRow(tabelaPedido.getSelectedRow());
+							vendaRapidaNova.calculaTotal();
+							atualizarCampoRecibo();
+							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));
 						}  
 					});
 				}
@@ -1373,13 +1321,14 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 						}			
 					}
 					
-					for(int i = 0; i < vendaRapida.getQuantidadeProdutos(); i++)
+					for(int i = 0; i < vendaRapidaNova.getQuantidadeProdutos(); i++)
 					{
-						Pedido ped = new Pedido(vendaRapida.getProduto(i), campoFuncionario.getSelectedItem().toString(), 0);
+						Pedido ped = new Pedido(vendaRapidaNova.getProduto(i), campoFuncionario.getSelectedItem().toString(), 0);
 						painelListener.atualizarPainel(ped);
 					}
 
-					vendaRapida.clear();
+					vendaRapidaNova.clear();
+					tabelaModel.refreshTable();
 					campoEntrega.setSelected(false);
 					adicionarDezPorcento.setSelected(false);
 					campoValor.setText("");
@@ -1394,7 +1343,6 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 					adicionaisPainel.removeAll();
 					adicionaisPainel.revalidate();
 					adicionaisPainel.repaint();
-					tabela.setNumRows(0);
 					clienteVenda = null;
 					taxaOpcional = 0.0;
 					adicionarDezPorcento.setText("+ 10% Opcional (R$0,00)");

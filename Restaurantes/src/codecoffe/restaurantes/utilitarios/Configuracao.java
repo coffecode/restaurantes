@@ -104,6 +104,7 @@ public class Configuracao implements Serializable
 		mensagemInferior = cc.getMensagemInferior();
 		tipoPrograma = cc.getTipoPrograma();
 		somCozinha = cc.isSomCozinha();
+		qntdMesas = cc.getMesas();
 		
 		if(tipoPrograma == UtilCoffe.TIPO_MESA)
 			tipoNome = "Mesa";

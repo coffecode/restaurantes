@@ -30,9 +30,10 @@ public abstract class UtilCoffe
 	public static final short MESA_ADICIONAR = 1;
 	public static final short MESA_ATUALIZAR = 2;
 	public static final short MESA_ATUALIZAR2 = 3;
-	public static final short MESA_DELETAR = 4;
-	public static final short MESA_LIMPAR = 5;
-	public static final short MESA_ERROR = 6;
+	public static final short MESA_TRANSFERIR = 4;
+	public static final short MESA_DELETAR = 5;
+	public static final short MESA_LIMPAR = 6;
+	public static final short MESA_ERROR = 7;
 
 	public static final short CLIENTE_ADICIONAR = 1;
 	public static final short CLIENTE_EDITAR = 2;

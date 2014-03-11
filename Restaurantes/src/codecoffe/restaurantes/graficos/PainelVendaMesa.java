@@ -973,6 +973,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		{
 			escolherCliente.setText("Escolher");
 			clienteVenda = null;
+			atualizarCampoRecibo();
 		}			
 		else if(e.getSource() == escolherCliente)
 		{
