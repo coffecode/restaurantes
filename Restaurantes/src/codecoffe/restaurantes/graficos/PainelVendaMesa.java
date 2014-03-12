@@ -13,7 +13,6 @@ import javax.swing.table.TableCellRenderer;
 
 import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.eventos.AtualizarPainel;
-import codecoffe.restaurantes.eventos.MesaAlterada;
 import codecoffe.restaurantes.graficos.produtos.ProdutosComboBox;
 import codecoffe.restaurantes.mysql.Query;
 import codecoffe.restaurantes.primitivas.Clientes;
@@ -33,6 +32,7 @@ import codecoffe.restaurantes.utilitarios.DiarioLog;
 import codecoffe.restaurantes.utilitarios.FocusTraversal;
 import codecoffe.restaurantes.utilitarios.Header;
 import codecoffe.restaurantes.utilitarios.Recibo;
+import codecoffe.restaurantes.utilitarios.Usuario;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
 import com.alee.extended.painter.DashedBorderPainter;
@@ -42,6 +42,7 @@ import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.text.WebTextField;
+import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.tooltip.TooltipManager;
 import com.alee.managers.tooltip.TooltipWay;
 
@@ -98,13 +99,13 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	private Configuracao config;
 	private Object modoPrograma;
 	private AtualizarPainel painelListener;
-	private MesaAlterada mesaListener;
+	private PainelMesas mesaListener;
 	private List<Pedido> todosPedidos;
 	private Venda vendaMesa;
 
 	@SuppressWarnings("rawtypes")
 	public PainelVendaMesa(Configuracao cfg, Object modo, CacheTodosProdutos produtos, 
-			List<Funcionario> funs, List<Pedido> pedidos, AtualizarPainel listener, MesaAlterada mesal) {
+			List<Funcionario> funs, List<Pedido> pedidos, AtualizarPainel listener, PainelMesas mesal) {
 		
 		config = cfg;
 		modoPrograma = modo;
@@ -952,7 +953,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 	{
 		CacheMesaHeader mh = new CacheMesaHeader(mesaID , vendaMesa, UtilCoffe.MESA_LIMPAR);
 		if(config.getModo() == UtilCoffe.SERVER) {
-			mesaListener.atualizarMesa(mh, null);
+			atualizaMesa(mh, null, (short)0);
 		}
 		else {
 			((Client) modoPrograma).enviarObjeto(mh);
@@ -1207,89 +1208,14 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		{
 			campoComentario.setText(campoComentario.getText().replaceAll("'", ""));
 			
-			if(addProduto.getProdutoSelecionado() == null)
-			{
+			if(addProduto.getProdutoSelecionado() == null) {
 				JOptionPane.showMessageDialog(null, "Você precisa selecionar um produto antes!");
 			}
-			else if(campoComentario.getText().length() > 100)
-			{
+			else if(campoComentario.getText().length() > 100) {
 				JOptionPane.showMessageDialog(null, "Campo comentário pode ter no máximo 100 caracteres!");
 			}
-			else
-			{
-				ProdutoVenda produto = new ProdutoVenda(addProduto.getProdutoSelecionado().getNome(), 
-						addProduto.getProdutoSelecionado().getReferencia(), 
-						addProduto.getProdutoSelecionado().getPreco(), 
-						addProduto.getProdutoSelecionado().getIdUnico(), 
-						addProduto.getProdutoSelecionado().getCodigo());
-
-				if(!UtilCoffe.vaziu(campoComentario.getText()))
-					produto.setComentario(campoComentario.getText());
-				
-				if(addAdicional.size() > 0)
-				{
-					for(int x = 0 ; x < addAdicional.size() ; x++)
-					{
-						produto.adicionrAdc(UtilCoffe.cloneProduto(addAdicional.get(x).getProdutoSelecionado()));
-					}
-				}
-
-				String limpeza = UtilCoffe.limpaNumero(campoQuantidade.getText());
-				if(!UtilCoffe.vaziu(limpeza) && limpeza.length() < 6)
-				{
-					int sizeAntes = vendaMesa.getQuantidadeProdutos();
-
-					if(Integer.parseInt(limpeza) > 0)
-					{
-						if(vendaMesa.getQuantidadeProdutos() <= 0)
-							vendaMesa.setData(new Date());
-						
-						produto.setQuantidade(Integer.parseInt(limpeza), 0);
-						vendaMesa.adicionarProduto(produto);
-						tabelaModel.refreshTable();
-						dragAdicionaProduto(produto);
-
-						if(sizeAntes == vendaMesa.getQuantidadeProdutos())
-						{
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 
-													Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
-							if(config.getModo() == UtilCoffe.SERVER) {
-								mesaListener.atualizarMesa(mh, null);
-							}
-							else {
-								((Client) modoPrograma).enviarObjeto(mh);
-							}
-						}
-						else
-						{
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ADICIONAR, 
-									Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
-							
-							if(config.getModo() == UtilCoffe.SERVER) {
-								mesaListener.atualizarMesa(mh, null);
-							}
-							else {
-								((Client) modoPrograma).enviarObjeto(mh);
-							}
-						}
-					}
-				}
-
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						campoValor.setText("");
-						campoQuantidade.setText("1");
-						campoComentario.setText("");
-						addAdicional.clear();
-						addRemover.clear();
-						adicionaisPainel.removeAll();
-						adicionaisPainel.revalidate();
-						adicionaisPainel.repaint();
-						addProduto.requestFocus();
-						mesaListener.atualizarMesa(mesaID);
-					}
-				});
+			else {
+				atualizaMesa(null, null, UtilCoffe.INTERFACE_MESA_ADD);
 			}
 		}
 
@@ -1404,7 +1330,6 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				if(tabelaPedido.getSelectedRowCount() == 1)
 				{
 					boolean continua = true;
-					int quantidadeDeletar = tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()).getQuantidade();
 					int fazendo = verificaStatusPedido((mesaID+1), tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()));
 
 					if(fazendo > 0)
@@ -1415,104 +1340,8 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 							continua = false;
 					}
 
-					if(continua)
-					{
-						for(int i = 0; i < painelDropOut.getComponentCount(); i++)
-						{	  
-							DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
-							{
-								painelDropOut.remove(i);
-								quantidadeDeletar--;
-								i = 0;
-
-								if(quantidadeDeletar <= 0)
-									break;		
-							}
-						}
-
-						if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
-						{
-							DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
-							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
-							{
-								painelDropOut.remove(0);
-								quantidadeDeletar--;
-							}    		  
-						}
-
-						if(quantidadeDeletar > 0)
-						{
-							for(int i = 0; i < painelDropIn.getComponentCount(); i++)
-							{ 
-								DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
-								if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
-								{
-									painelDropIn.remove(i);
-									quantidadeDeletar--;
-									i = 0;
-
-									if(quantidadeDeletar <= 0)
-										break;		
-								}
-							}		    		  
-						}
-
-						if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
-						{
-							DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
-							if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
-							{
-								painelDropIn.remove(0);
-								quantidadeDeletar--;
-							} 	    		  
-						}
-						
-						if(tabelaPedido.getSelectedRow() >= 0 && tabelaPedido.getSelectedRowCount() == 1) 
-						{
-							ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()));
-							tabelaModel.removeRow(tabelaPedido.getSelectedRow());
-							vendaMesa.calculaTotal();
-							mesaListener.atualizarMesa(mesaID);
-							
-							CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, 
-									UtilCoffe.MESA_DELETAR, prod.getQuantidade(), campoFuncionario.getSelectedItem().toString());
-							
-							if(config.getModo() == UtilCoffe.SERVER) {
-								mesaListener.atualizarMesa(mh, null);
-							}
-							else {
-								((Client) modoPrograma).enviarObjeto(mh);
-							}
-						}
-
-						double total = 0.0;
-						for(int i = 0; i < painelDropOut.getComponentCount(); i++)
-						{
-							DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-							total += dragL.getProduto().getTotalProduto();
-						}
-
-						if(config.getDezPorcento())
-						{
-							taxaOpcional = total * 0.10;
-							adicionarDezPorcento.setText("<html>+ 10% Opcional: <br>(R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")</html>");
-						}
-
-						if(adicionarDezPorcento.isSelected())
-							campoTotal.setText(UtilCoffe.doubleToPreco((total + (total * 0.10))));
-						else
-							campoTotal.setText(UtilCoffe.doubleToPreco(total));
-
-						atualizarCampoRecibo();
-						SwingUtilities.invokeLater(new Runnable() {  
-							public void run() {  
-								painelDropOut.revalidate();
-								painelDropOut.repaint();
-								painelDropIn.revalidate();
-								painelDropIn.repaint();
-							}  
-						});
+					if(continua) {
+						atualizaMesa(null, null, UtilCoffe.INTERFACE_MESA_REMOVE_TABELA2);
 					}
 				}
 			}
@@ -1642,164 +1471,28 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				public void actionPerformed(ActionEvent e) {
 					if(e.getSource() == maisProduto)
 					{
-						SwingUtilities.invokeLater(new Runnable() {  
-							public void run() {  
-								if(linha < tabelaModel.getRowCount() && linha >= 0)
-								{
-									tabelaModel.getProdutoVenda(linha).setQuantidade(1, 1);
-									tabelaModel.getProdutoVenda(linha).calcularPreco();
-									tabelaModel.refreshTable();
-									vendaMesa.calculaTotal();
-									
-									ProdutoVenda maisUm = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
-									maisUm.setQuantidade(1, 0);
-									dragAdicionaProduto(maisUm);
-
-									mesaListener.atualizarMesa(mesaID);
-									CacheMesaHeader mh = new CacheMesaHeader(mesaID, maisUm, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 1, campoFuncionario.getSelectedItem().toString());
-									if(config.getModo() == UtilCoffe.SERVER) {
-										mesaListener.atualizarMesa(mh, null);
-									}
-									else {
-										((Client) modoPrograma).enviarObjeto(mh);
-									}
-								}
-							}
-						});
+						atualizaMesa(new CacheMesaHeader(linha, linha, linha), null, UtilCoffe.INTERFACE_MESA_ADD_TABELA);
 					}
 					else
 					{
-						SwingUtilities.invokeLater(new Runnable() {  
-							public void run() {  
-								if(linha < tabelaModel.getRowCount() && linha >= 0)
-								{
-									boolean continua = true;
-									int fazendo = verificaStatusPedido((mesaID+1), tabelaModel.getProdutoVenda(linha));
+						if(linha < tabelaModel.getRowCount() && linha >= 0)
+						{
+							boolean continua = true;
+							int fazendo = verificaStatusPedido((mesaID+1), tabelaModel.getProdutoVenda(linha));
 
-									if(fazendo >= tabelaModel.getProdutoVenda(linha).getQuantidade())
-									{
-										int opcao = JOptionPane.showConfirmDialog(null, "Esse produto já está marcado como Fazendo na cozinha."
-												+ "\n\nVocê tem certeza que quer deletar?\n\n", "Deletar Produto", JOptionPane.YES_NO_OPTION);
-										if(opcao != JOptionPane.YES_OPTION)
-											continua = false;
-									}
-
-									if(continua)
-									{
-										boolean deletar_all = true;
-										if(tabelaModel.getProdutoVenda(linha).getQuantidade() > 1) {
-											deletar_all = false;
-										}
-
-										int quantidadeDeletar = 1;
-										for(int i = 0; i < painelDropOut.getComponentCount(); i++)
-										{	  
-											DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
-											{
-												painelDropOut.remove(i);
-												quantidadeDeletar = 0;
-												break;
-											}
-										}
-
-										if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
-										{
-											DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
-											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
-											{
-												painelDropOut.remove(0);
-												quantidadeDeletar = 0;
-											}	    		  
-										}
-
-										if(quantidadeDeletar > 0)
-										{
-											for(int i = 0; i < painelDropIn.getComponentCount(); i++)
-											{ 
-												DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
-												if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
-												{
-													painelDropIn.remove(i);
-													quantidadeDeletar = 0;
-													break;
-												}
-											}		    		  
-										}
-
-										if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
-										{
-											DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
-											if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(linha)))
-											{
-												painelDropIn.remove(0);
-												quantidadeDeletar = 0;
-											}	    		  
-										}
-
-										painelDropOut.revalidate();
-										painelDropOut.repaint();
-										painelDropIn.revalidate();
-										painelDropIn.repaint();
-
-										if(deletar_all)
-										{
-											ProdutoVenda pv = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
-											tabelaModel.removeRow(linha);
-											vendaMesa.calculaTotal();
-											mesaListener.atualizarMesa(mesaID);
-
-											CacheMesaHeader mh = new CacheMesaHeader(mesaID, pv, vendaMesa, UtilCoffe.MESA_DELETAR, 1);
-											if(config.getModo() == UtilCoffe.SERVER) {
-												mesaListener.atualizarMesa(mh, null);
-											}
-											else {
-												((Client) modoPrograma).enviarObjeto(mh);
-											}
-										}
-										else
-										{
-											ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(linha));
-											prod.setQuantidade(1, 0);
-
-											tabelaModel.getProdutoVenda(linha).setQuantidade(1, 2);
-											tabelaModel.getProdutoVenda(linha).calcularPreco();
-											tabelaModel.refreshTable();
-											vendaMesa.calculaTotal();
-											mesaListener.atualizarMesa(mesaID);
-
-											CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, UtilCoffe.MESA_ATUALIZAR, -1);
-											if(config.getModo() == UtilCoffe.SERVER) {
-												mesaListener.atualizarMesa(mh, null);
-											}
-											else {
-												((Client) modoPrograma).enviarObjeto(mh);
-											}
-										}
-
-										double total = 0.0;
-										for(int i = 0; i < painelDropOut.getComponentCount(); i++)
-										{
-											DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
-											total += dragL.getProduto().getTotalProduto();
-										}
-
-										if(config.getDezPorcento())
-										{
-											taxaOpcional = total * 0.10;
-											adicionarDezPorcento.setText("<html>+ 10% Opcional: <br>(R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")</html>");
-										}
-
-										if(adicionarDezPorcento.isSelected())
-											campoTotal.setText(UtilCoffe.doubleToPreco((total + (total * 0.10))));
-										else
-											campoTotal.setText(UtilCoffe.doubleToPreco(total));
-
-										atualizarCampoRecibo();							
-									}
-								}
+							if(fazendo >= tabelaModel.getProdutoVenda(linha).getQuantidade())
+							{
+								int opcao = JOptionPane.showConfirmDialog(null, "Esse produto já está marcado como Fazendo na cozinha."
+										+ "\n\nVocê tem certeza que quer deletar?\n\n", "Deletar Produto", JOptionPane.YES_NO_OPTION);
+								if(opcao != JOptionPane.YES_OPTION)
+									continua = false;
 							}
-						});
+
+							if(continua)
+							{
+								atualizaMesa(new CacheMesaHeader(linha, linha, linha), null, UtilCoffe.INTERFACE_MESA_REMOVE_TABELA);
+							}
+						}
 					}
 				}
 			};
@@ -2063,5 +1756,552 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				}				
 			}
 		});
+	}
+	
+	public synchronized void atualizaMesa(CacheMesaHeader m, ObjectOutputStream socket, short operacao) 
+	{
+		if(operacao == UtilCoffe.INTERFACE_SETAR_MESA)
+		{
+			mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+		}
+		else if(operacao > 0)
+		{
+			if(operacao == UtilCoffe.INTERFACE_MESA_ADD)
+			{
+				ProdutoVenda produto = new ProdutoVenda(addProduto.getProdutoSelecionado().getNome(), 
+						addProduto.getProdutoSelecionado().getReferencia(), 
+						addProduto.getProdutoSelecionado().getPreco(), 
+						addProduto.getProdutoSelecionado().getIdUnico(), 
+						addProduto.getProdutoSelecionado().getCodigo());
+
+				if(!UtilCoffe.vaziu(campoComentario.getText()))
+					produto.setComentario(campoComentario.getText());
+				
+				if(addAdicional.size() > 0)
+				{
+					for(int x = 0 ; x < addAdicional.size() ; x++)
+					{
+						produto.adicionrAdc(UtilCoffe.cloneProduto(addAdicional.get(x).getProdutoSelecionado()));
+					}
+				}
+
+				String limpeza = UtilCoffe.limpaNumero(campoQuantidade.getText());
+				if(!UtilCoffe.vaziu(limpeza) && limpeza.length() < 6)
+				{
+					int sizeAntes = vendaMesa.getQuantidadeProdutos();
+
+					if(Integer.parseInt(limpeza) > 0)
+					{
+						if(vendaMesa.getQuantidadeProdutos() <= 0)
+							vendaMesa.setData(new Date());
+						
+						produto.setQuantidade(Integer.parseInt(limpeza), 0);
+						vendaMesa.adicionarProduto(produto);
+						tabelaModel.refreshTable();
+						dragAdicionaProduto(produto);
+
+						if(sizeAntes == vendaMesa.getQuantidadeProdutos())
+						{
+							mesaListener.atualizarMesa(mesaID);
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 
+													Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
+							if(config.getModo() == UtilCoffe.SERVER) {
+								atualizaMesa(mh, null, (short)0);
+							}
+							else {
+								((Client) modoPrograma).enviarObjeto(mh);
+							}
+						}
+						else
+						{
+							mesaListener.atualizarMesa(mesaID);
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, produto, vendaMesa, UtilCoffe.MESA_ADICIONAR, 
+									Integer.parseInt(limpeza), campoFuncionario.getSelectedItem().toString());
+							
+							if(config.getModo() == UtilCoffe.SERVER) {
+								atualizaMesa(mh, null, (short)0);
+							}
+							else {
+								((Client) modoPrograma).enviarObjeto(mh);
+							}
+						}
+					}
+				}
+			}
+			else if(operacao == UtilCoffe.INTERFACE_MESA_ADD_TABELA)
+			{
+				final CacheMesaHeader x = m;
+				
+				SwingUtilities.invokeLater(new Runnable() {  
+					public void run() {  
+						if(x.getHeader() < tabelaModel.getRowCount() && x.getHeader() >= 0)
+						{
+							tabelaModel.getProdutoVenda(x.getHeader()).setQuantidade(1, 1);
+							tabelaModel.getProdutoVenda(x.getHeader()).calcularPreco();
+							tabelaModel.refreshTable();
+							vendaMesa.calculaTotal();
+							
+							ProdutoVenda maisUm = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(x.getHeader()));
+							maisUm.setQuantidade(1, 0);
+							dragAdicionaProduto(maisUm);
+							
+							mesaListener.atualizarMesa(mesaID);
+
+							CacheMesaHeader mh = new CacheMesaHeader(mesaID, maisUm, vendaMesa, UtilCoffe.MESA_ATUALIZAR, 1, campoFuncionario.getSelectedItem().toString());
+							if(config.getModo() == UtilCoffe.SERVER) {
+								atualizaMesa(mh, null, (short)0);
+							}
+							else {
+								((Client) modoPrograma).enviarObjeto(mh);
+							}
+						}
+					}
+				});
+			}
+			else if(operacao == UtilCoffe.INTERFACE_MESA_REMOVE_TABELA)
+			{
+				final CacheMesaHeader x = m;
+				
+				SwingUtilities.invokeLater(new Runnable() {  
+					public void run() {
+						
+						if(x.getHeader() >= 0 && x.getHeader() < tabelaModel.getRowCount())
+						{
+							boolean deletar_all = true;
+							if(tabelaModel.getProdutoVenda(x.getHeader()).getQuantidade() > 1) {
+								deletar_all = false;
+							}
+
+							int quantidadeDeletar = 1;
+							for(int i = 0; i < painelDropOut.getComponentCount(); i++)
+							{	  
+								DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
+								if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(x.getHeader())))
+								{
+									painelDropOut.remove(i);
+									quantidadeDeletar = 0;
+									break;
+								}
+							}
+
+							if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
+							{
+								DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
+								if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(x.getHeader())))
+								{
+									painelDropOut.remove(0);
+									quantidadeDeletar = 0;
+								}	    		  
+							}
+
+							if(quantidadeDeletar > 0)
+							{
+								for(int i = 0; i < painelDropIn.getComponentCount(); i++)
+								{ 
+									DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
+									if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(x.getHeader())))
+									{
+										painelDropIn.remove(i);
+										quantidadeDeletar = 0;
+										break;
+									}
+								}		    		  
+							}
+
+							if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
+							{
+								DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
+								if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(x.getHeader())))
+								{
+									painelDropIn.remove(0);
+									quantidadeDeletar = 0;
+								}	    		  
+							}
+
+							painelDropOut.revalidate();
+							painelDropOut.repaint();
+							painelDropIn.revalidate();
+							painelDropIn.repaint();
+
+							if(deletar_all)
+							{
+								ProdutoVenda pv = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(x.getHeader()));
+								tabelaModel.removeRow(x.getHeader());
+								vendaMesa.calculaTotal();
+								mesaListener.atualizarMesa(mesaID);
+
+								CacheMesaHeader mh = new CacheMesaHeader(mesaID, pv, vendaMesa, UtilCoffe.MESA_DELETAR, 1);
+								if(config.getModo() == UtilCoffe.SERVER) {
+									atualizaMesa(mh, null, (short)0);
+								}
+								else {
+									((Client) modoPrograma).enviarObjeto(mh);
+								}
+							}
+							else
+							{
+								ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(x.getHeader()));
+								prod.setQuantidade(1, 0);
+
+								tabelaModel.getProdutoVenda(x.getHeader()).setQuantidade(1, 2);
+								tabelaModel.getProdutoVenda(x.getHeader()).calcularPreco();
+								tabelaModel.refreshTable();
+								vendaMesa.calculaTotal();
+								mesaListener.atualizarMesa(mesaID);
+
+								CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, UtilCoffe.MESA_ATUALIZAR, -1);
+								if(config.getModo() == UtilCoffe.SERVER) {
+									atualizaMesa(mh, null, (short)0);
+								}
+								else {
+									((Client) modoPrograma).enviarObjeto(mh);
+								}
+							}
+
+							double total = 0.0;
+							for(int i = 0; i < painelDropOut.getComponentCount(); i++)
+							{
+								DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
+								total += dragL.getProduto().getTotalProduto();
+							}
+
+							if(config.getDezPorcento())
+							{
+								taxaOpcional = total * 0.10;
+								adicionarDezPorcento.setText("<html>+ 10% Opcional: <br>(R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")</html>");
+							}
+
+							if(adicionarDezPorcento.isSelected())
+								campoTotal.setText(UtilCoffe.doubleToPreco((total + (total * 0.10))));
+							else
+								campoTotal.setText(UtilCoffe.doubleToPreco(total));
+
+							atualizarCampoRecibo();	
+						}
+					}
+				});						
+			}
+			else if(operacao == UtilCoffe.INTERFACE_MESA_REMOVE_TABELA2)
+			{
+				int quantidadeDeletar = tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()).getQuantidade();
+				
+				for(int i = 0; i < painelDropOut.getComponentCount(); i++)
+				{	  
+					DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
+					if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
+					{
+						painelDropOut.remove(i);
+						quantidadeDeletar--;
+						i = 0;
+
+						if(quantidadeDeletar <= 0)
+							break;		
+					}
+				}
+
+				if(quantidadeDeletar > 0 && painelDropOut.getComponentCount() > 0)
+				{
+					DragLabel dragL = (DragLabel)painelDropOut.getComponent(0);
+					if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
+					{
+						painelDropOut.remove(0);
+						quantidadeDeletar--;
+					}    		  
+				}
+
+				if(quantidadeDeletar > 0)
+				{
+					for(int i = 0; i < painelDropIn.getComponentCount(); i++)
+					{ 
+						DragLabel dragL = (DragLabel)painelDropIn.getComponent(i);
+						if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
+						{
+							painelDropIn.remove(i);
+							quantidadeDeletar--;
+							i = 0;
+
+							if(quantidadeDeletar <= 0)
+								break;		
+						}
+					}		    		  
+				}
+
+				if(quantidadeDeletar > 0 && painelDropIn.getComponentCount() > 0)
+				{
+					DragLabel dragL = (DragLabel)painelDropIn.getComponent(0);
+					if(dragL.getProduto().compareTo(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow())))
+					{
+						painelDropIn.remove(0);
+						quantidadeDeletar--;
+					} 	    		  
+				}
+				
+				if(tabelaPedido.getSelectedRow() >= 0 && tabelaPedido.getSelectedRowCount() == 1) 
+				{
+					ProdutoVenda prod = UtilCoffe.cloneProdutoVenda(tabelaModel.getProdutoVenda(tabelaPedido.getSelectedRow()));
+					tabelaModel.removeRow(tabelaPedido.getSelectedRow());
+					vendaMesa.calculaTotal();
+					mesaListener.atualizarMesa(mesaID);
+					
+					CacheMesaHeader mh = new CacheMesaHeader(mesaID, prod, vendaMesa, 
+							UtilCoffe.MESA_DELETAR, prod.getQuantidade(), campoFuncionario.getSelectedItem().toString());
+					
+					if(config.getModo() == UtilCoffe.SERVER) {
+						atualizaMesa(mh, null, (short)0);
+					}
+					else {
+						((Client) modoPrograma).enviarObjeto(mh);
+					}
+				}
+
+				double total = 0.0;
+				for(int i = 0; i < painelDropOut.getComponentCount(); i++)
+				{
+					DragLabel dragL = (DragLabel)painelDropOut.getComponent(i);
+					total += dragL.getProduto().getTotalProduto();
+				}
+
+				if(config.getDezPorcento())
+				{
+					taxaOpcional = total * 0.10;
+					adicionarDezPorcento.setText("<html>+ 10% Opcional: <br>(R$" + UtilCoffe.doubleToPreco(taxaOpcional) + ")</html>");
+				}
+
+				if(adicionarDezPorcento.isSelected())
+					campoTotal.setText(UtilCoffe.doubleToPreco((total + (total * 0.10))));
+				else
+					campoTotal.setText(UtilCoffe.doubleToPreco(total));
+
+				atualizarCampoRecibo();
+				SwingUtilities.invokeLater(new Runnable() {  
+					public void run() {  
+						painelDropOut.revalidate();
+						painelDropOut.repaint();
+						painelDropIn.revalidate();
+						painelDropIn.repaint();
+					}  
+				});
+			}
+		}
+		else
+		{
+			switch(m.getHeader())
+			{
+				case UtilCoffe.MESA_ADICIONAR:
+				{
+					try {
+						String formatacao;
+						Query envia = new Query();
+						formatacao = "INSERT INTO mesas(mesas_id, produto, quantidade, pago, adicionais, comentario, data) VALUES("
+						+ m.getMesaId() + ", " + m.getProdutoMesa().getIdUnico() + ", " + m.getHeaderExtra() + ", 0, '" 
+						+ m.getProdutoMesa().getAllAdicionaisId() + "', '" + m.getProdutoMesa().getComentario() + "', '"
+						+ m.getMesaVenda().getDataString() + "');";
+						envia.executaUpdate(formatacao);
+						envia.fechaConexao();
+						
+						if(socket != null) {
+							mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+							mesaListener.atualizarMesa(m.getMesaId());
+						}
+						
+						((Servidor) modoPrograma).enviaTodos(m, socket);
+						Pedido ped = new Pedido(m.getProdutoMesa(), m.getAtendente(), (m.getMesaId()+1));
+						ped.getProduto().setQuantidade(m.getHeaderExtra(), 0);
+						painelListener.atualizarPainel(ped);
+						
+						if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+							painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+									mesaListener.getVendaMesas().get(m.getMesaId())));
+						}
+					} catch (ClassNotFoundException | SQLException e) {
+						e.printStackTrace();
+						((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
+								mesaListener.getVendaMesas().get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
+						new PainelErro(e);
+					}
+					
+					break;
+				}
+				case UtilCoffe.MESA_ATUALIZAR:
+				{
+					try {
+						String formatacao;
+						Query envia = new Query();
+						formatacao = "UPDATE mesas SET `quantidade` = (`quantidade` + " + m.getHeaderExtra() + ") WHERE `mesas_id` = " + m.getMesaId()
+						+ " AND `produto` = " + m.getProdutoMesa().getIdUnico() 
+						+ " AND `adicionais` = '" + m.getProdutoMesa().getAllAdicionaisId() 
+						+ "' AND `comentario` = '" + m.getProdutoMesa().getComentario() + "';";						
+						envia.executaUpdate(formatacao);
+						envia.fechaConexao();
+						
+						if(socket != null) {
+							mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+							mesaListener.atualizarMesa(m.getMesaId());
+						}
+						
+						((Servidor) modoPrograma).enviaTodos(m, socket);
+						ProdutoVenda pNovo = UtilCoffe.cloneProdutoVenda(m.getProdutoMesa());
+						
+						/* adicionar pedido */
+						if(m.getHeaderExtra() > 0) // se for menor que zero ele ta deletando um pedido..
+						{
+							Pedido ped = new Pedido(pNovo, m.getAtendente(), (m.getMesaId()+1));
+							painelListener.atualizarPainel(ped);
+						}
+						else
+						{
+							Pedido ped = new Pedido(pNovo, m.getAtendente(), (m.getMesaId()+1));
+							ped.setHeader(UtilCoffe.PEDIDO_STATUS);
+							painelListener.atualizarPainel(ped);						
+						}
+						
+						if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+							painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+									mesaListener.getVendaMesas().get(m.getMesaId())));
+						}
+					} catch (ClassNotFoundException | SQLException e) {
+						e.printStackTrace();
+						((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
+								mesaListener.getVendaMesas().get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
+						new PainelErro(e);
+					}
+					
+					break;
+				}
+				case UtilCoffe.MESA_ATUALIZAR2:
+				{
+					if(socket != null) {
+						mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+						mesaListener.atualizarMesa(m.getMesaId());
+					}
+					
+					if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+								mesaListener.getVendaMesas().get(m.getMesaId())));
+					}
+					
+					((Servidor) modoPrograma).enviaTodos(m, socket);
+					break;
+				}
+				case UtilCoffe.MESA_TRANSFERIR:
+				{
+					try {
+						Query transfere = new Query();
+						transfere.executaUpdate("UPDATE mesas SET mesas_id = " + m.getHeaderExtra() + " WHERE mesas_id = " + m.getMesaId());
+						transfere.fechaConexao();
+						
+						for(int i = 0; i < mesaListener.getVendaMesas().get(m.getMesaId()).getQuantidadeProdutos(); i++) {
+							mesaListener.getVendaMesas().get(m.getHeaderExtra()).getProdutos().add(UtilCoffe.cloneProdutoVenda(mesaListener.getVendaMesas().get(m.getMesaId()).getProduto(i)));
+						}
+						
+						mesaListener.getVendaMesas().get(m.getMesaId()).clear();
+						mesaListener.getVendaMesas().get(m.getMesaId()).calculaTotal();
+						mesaListener.getVendaMesas().get(m.getHeaderExtra()).calculaTotal();
+						
+						mesaListener.atualizarMesa(m.getMesaId());
+						mesaListener.atualizarMesa(m.getHeaderExtra());
+						
+						if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+							painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+									mesaListener.getVendaMesas().get(m.getMesaId())));
+						}
+						else if(Usuario.INSTANCE.getOlhando() == m.getHeaderExtra() && socket != null) {
+							painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getHeaderExtra()), 
+									mesaListener.getVendaMesas().get(m.getHeaderExtra())));
+						}
+							
+						NotificationManager.setLocation(2);
+						NotificationManager.showNotification(this, config.getTipoNome() + " " + (m.getMesaId()+1) + " transferida para " + (m.getHeaderExtra()+1), 
+								new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png"))).setDisplayTime(2000);
+						
+						CacheMesaHeader newCache = new CacheMesaHeader(m.getMesaId(), m.getHeaderExtra(), UtilCoffe.MESA_TRANSFERIR, mesaListener.getVendaMesas().get(m.getHeaderExtra()));
+						((Servidor) modoPrograma).enviaTodos(newCache);
+					} catch (ClassNotFoundException | SQLException e) {
+						e.printStackTrace();
+						new PainelErro(e);
+					}
+					break;
+				}
+				default:	// delete ou limpar
+				{
+					boolean termina = false;
+					try {
+						Query pega = new Query();
+						if(m.getHeader() == UtilCoffe.MESA_DELETAR)
+						      pega.executaUpdate("DELETE FROM mesas WHERE `produto` = " + m.getProdutoMesa().getIdUnico() 
+						    		  + " AND `adicionais` = '" + m.getProdutoMesa().getAllAdicionaisId()
+						    		  + "' AND `comentario` = '" + m.getProdutoMesa().getComentario()
+						    		  + "' AND `mesas_id` = " + m.getMesaId() + ";");
+						
+						pega.executaQuery("SELECT * FROM mesas WHERE `quantidade` != `pago` AND `mesas_id` = "+ m.getMesaId() +";");
+						if(!pega.next())
+						{
+							pega.executaUpdate("DELETE FROM mesas WHERE `mesas_id` = "+ m.getMesaId() +";");
+							m.getMesaVenda().clear();
+							termina = true;
+						}
+						
+						pega.fechaConexao();
+						
+						if(m.getHeader() == UtilCoffe.MESA_DELETAR)
+						{
+							m.getProdutoMesa().setQuantidade(m.getHeaderExtra(), 0);
+							Pedido ped = new Pedido(m.getProdutoMesa(), m.getAtendente(), (m.getMesaId()+1));
+							ped.setHeader(UtilCoffe.PEDIDO_STATUS);
+							painelListener.atualizarPainel(ped);
+						}
+						
+					} catch (ClassNotFoundException | SQLException e) {
+						e.printStackTrace();
+						((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
+								mesaListener.getVendaMesas().get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
+						new PainelErro(e);
+					} finally {
+						if(m.getHeader() == UtilCoffe.MESA_LIMPAR)
+						{
+							if(termina)
+							{
+								mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+								mesaListener.atualizarMesa(m.getMesaId());
+								((Servidor) modoPrograma).enviaTodos(m);
+								
+								if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+									painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+											mesaListener.getVendaMesas().get(m.getMesaId())));
+								}
+							}					
+						}
+						else if(m.getHeader() == UtilCoffe.MESA_DELETAR)
+						{
+							if(!termina)
+							{
+								if(socket != null) {
+									mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+									mesaListener.atualizarMesa(m.getMesaId());
+								}
+								
+								if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+									painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+											mesaListener.getVendaMesas().get(m.getMesaId())));
+								}
+								
+								((Servidor) modoPrograma).enviaTodos(m, socket);
+							}
+							else
+							{
+								mesaListener.getVendaMesas().set(m.getMesaId(), m.getMesaVenda());
+								mesaListener.atualizarMesa(m.getMesaId());
+								((Servidor) modoPrograma).enviaTodos(m);
+								
+								if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
+									painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
+											mesaListener.getVendaMesas().get(m.getMesaId())));
+								}
+							}	
+						}
+					}
+				}
+			}
+		}
 	}
 }

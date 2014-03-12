@@ -6,31 +6,21 @@ import javax.swing.border.EtchedBorder;
 
 import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.eventos.AtualizarPainel;
-import codecoffe.restaurantes.eventos.MesaAlterada;
-import codecoffe.restaurantes.mysql.Query;
-import codecoffe.restaurantes.primitivas.Pedido;
-import codecoffe.restaurantes.primitivas.ProdutoVenda;
 import codecoffe.restaurantes.primitivas.Venda;
 import codecoffe.restaurantes.sockets.CacheMesaHeader;
 import codecoffe.restaurantes.sockets.Client;
-import codecoffe.restaurantes.sockets.Servidor;
 import codecoffe.restaurantes.utilitarios.Configuracao;
 import codecoffe.restaurantes.utilitarios.Header;
-import codecoffe.restaurantes.utilitarios.Usuario;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
 import com.alee.extended.window.WebPopOver;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.text.WebTextField;
-import com.alee.managers.notification.NotificationManager;
-
 import java.awt.event.*;
-import java.io.ObjectOutputStream;
-import java.sql.SQLException;
 import java.util.List;
 
-public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
+public class PainelMesas extends JPanel implements ActionListener
 {
 	private static final long serialVersionUID = 1L;
 	private JPanel mesasPainel;
@@ -41,6 +31,7 @@ public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
 	private AtualizarPainel painelListener;
 	private Object modoPrograma;
 	private JPopupMenu popup;
+	private PainelVendaMesa painelVendaMesa;
 	private int mesaTransferir;
 	
 	public PainelMesas(Configuracao cfg, Object modo, List<Venda> mesas, AtualizarPainel listener)
@@ -195,15 +186,30 @@ public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
 		}
 	}
 	
-	public synchronized void setMesa(int id, Venda v) {
+	/*public synchronized void setMesa(int id, Venda v) {
 		vendaMesas.set(id, v);
-	}
+	}*/
 	
 	public Venda getMesa(int id) {
 		return vendaMesas.get(id);
 	}
 
-	@Override
+	public List<Venda> getVendaMesas() {
+		return vendaMesas;
+	}
+
+	public void setVendaMesas(List<Venda> vendaMesas) {
+		this.vendaMesas = vendaMesas;
+	}
+
+	public PainelVendaMesa getPainelVendaMesa() {
+		return painelVendaMesa;
+	}
+
+	public void setPainelVendaMesa(PainelVendaMesa painelVendaMesa) {
+		this.painelVendaMesa = painelVendaMesa;
+	}
+
 	public void atualizarMesa(int id) {
 		if(vendaMesas.get(id).getQuantidadeProdutos() > 0)
 		{
@@ -214,228 +220,6 @@ public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
 		{
 			((BotaoMesa) mesasPainel.getComponent(id)).setIcon(mesaNormal);
 			((BotaoMesa) mesasPainel.getComponent(id)).setForeground(Color.BLACK);
-		}
-	}
-
-	@Override
-	public synchronized void atualizarMesa(CacheMesaHeader m, ObjectOutputStream socket) 
-	{
-		switch(m.getHeader())
-		{
-			case UtilCoffe.MESA_ADICIONAR:
-			{
-				try {
-					String formatacao;
-					Query envia = new Query();
-					formatacao = "INSERT INTO mesas(mesas_id, produto, quantidade, pago, adicionais, comentario, data) VALUES("
-					+ m.getMesaId() + ", " + m.getProdutoMesa().getIdUnico() + ", " + m.getHeaderExtra() + ", 0, '" 
-					+ m.getProdutoMesa().getAllAdicionaisId() + "', '" + m.getProdutoMesa().getComentario() + "', '"
-					+ m.getMesaVenda().getDataString() + "');";
-					envia.executaUpdate(formatacao);
-					envia.fechaConexao();
-					
-					if(socket != null) {
-						vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-						atualizarMesa(m.getMesaId());
-					}
-					
-					((Servidor) modoPrograma).enviaTodos(m, socket);
-					Pedido ped = new Pedido(m.getProdutoMesa(), m.getAtendente(), (m.getMesaId()+1));
-					ped.getProduto().setQuantidade(m.getHeaderExtra(), 0);
-					painelListener.atualizarPainel(ped);
-					
-					if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-								vendaMesas.get(m.getMesaId())));
-					}
-				} catch (ClassNotFoundException | SQLException e) {
-					e.printStackTrace();
-					((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
-									vendaMesas.get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
-					new PainelErro(e);
-				}
-				
-				break;
-			}
-			case UtilCoffe.MESA_ATUALIZAR:
-			{
-				try {
-					String formatacao;
-					Query envia = new Query();
-					formatacao = "UPDATE mesas SET `quantidade` = (`quantidade` + " + m.getHeaderExtra() + ") WHERE `mesas_id` = " + m.getMesaId()
-					+ " AND `produto` = " + m.getProdutoMesa().getIdUnico() 
-					+ " AND `adicionais` = '" + m.getProdutoMesa().getAllAdicionaisId() 
-					+ "' AND `comentario` = '" + m.getProdutoMesa().getComentario() + "';";						
-					envia.executaUpdate(formatacao);
-					envia.fechaConexao();
-					
-					if(socket != null) {
-						vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-						atualizarMesa(m.getMesaId());
-					}
-					
-					((Servidor) modoPrograma).enviaTodos(m, socket);
-					ProdutoVenda pNovo = UtilCoffe.cloneProdutoVenda(m.getProdutoMesa());
-					
-					/* adicionar pedido */
-					if(m.getHeaderExtra() > 0) // se for menor que zero ele ta deletando um pedido..
-					{
-						Pedido ped = new Pedido(pNovo, m.getAtendente(), (m.getMesaId()+1));
-						painelListener.atualizarPainel(ped);
-					}
-					else
-					{
-						Pedido ped = new Pedido(pNovo, m.getAtendente(), (m.getMesaId()+1));
-						ped.setHeader(UtilCoffe.PEDIDO_STATUS);
-						painelListener.atualizarPainel(ped);						
-					}
-					
-					if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-								vendaMesas.get(m.getMesaId())));
-					}
-				} catch (ClassNotFoundException | SQLException e) {
-					e.printStackTrace();
-					((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
-									vendaMesas.get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
-					new PainelErro(e);
-				}
-				
-				break;
-			}
-			case UtilCoffe.MESA_ATUALIZAR2:
-			{
-				if(socket != null) {
-					vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-					atualizarMesa(m.getMesaId());
-				}
-				
-				if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-					painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-							vendaMesas.get(m.getMesaId())));
-				}
-				
-				((Servidor) modoPrograma).enviaTodos(m, socket);
-				break;
-			}
-			case UtilCoffe.MESA_TRANSFERIR:
-			{
-				try {
-					Query transfere = new Query();
-					transfere.executaUpdate("UPDATE mesas SET mesas_id = " + m.getHeaderExtra() + " WHERE mesas_id = " + m.getMesaId());
-					transfere.fechaConexao();
-					
-					for(int i = 0; i < vendaMesas.get(m.getMesaId()).getQuantidadeProdutos(); i++) {
-						vendaMesas.get(m.getHeaderExtra()).getProdutos().add(UtilCoffe.cloneProdutoVenda(vendaMesas.get(m.getMesaId()).getProduto(i)));
-					}
-					
-					vendaMesas.get(m.getMesaId()).clear();
-					vendaMesas.get(m.getMesaId()).calculaTotal();
-					vendaMesas.get(m.getHeaderExtra()).calculaTotal();
-					
-					atualizarMesa(m.getMesaId());
-					atualizarMesa(m.getHeaderExtra());
-					
-					if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-								vendaMesas.get(m.getMesaId())));
-					}
-					else if(Usuario.INSTANCE.getOlhando() == m.getHeaderExtra() && socket != null) {
-						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getHeaderExtra()), 
-								vendaMesas.get(m.getHeaderExtra())));
-					}
-						
-					NotificationManager.setLocation(2);
-					NotificationManager.showNotification(this, config.getTipoNome() + " " + (m.getMesaId()+1) + " transferida para " + (m.getHeaderExtra()+1), 
-							new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_ok.png"))).setDisplayTime(2000);
-					
-					CacheMesaHeader newCache = new CacheMesaHeader(m.getMesaId(), m.getHeaderExtra(), UtilCoffe.MESA_TRANSFERIR, vendaMesas.get(m.getHeaderExtra()));
-					((Servidor) modoPrograma).enviaTodos(newCache);
-				} catch (ClassNotFoundException | SQLException e) {
-					e.printStackTrace();
-					new PainelErro(e);
-				}
-				break;
-			}
-			default:	// delete ou limpar
-			{
-				boolean termina = false;
-				try {
-					Query pega = new Query();
-					if(m.getHeader() == UtilCoffe.MESA_DELETAR)
-					      pega.executaUpdate("DELETE FROM mesas WHERE `produto` = " + m.getProdutoMesa().getIdUnico() 
-					    		  + " AND `adicionais` = '" + m.getProdutoMesa().getAllAdicionaisId()
-					    		  + "' AND `comentario` = '" + m.getProdutoMesa().getComentario()
-					    		  + "' AND `mesas_id` = " + m.getMesaId() + ";");
-					
-					pega.executaQuery("SELECT * FROM mesas WHERE `quantidade` != `pago` AND `mesas_id` = "+ m.getMesaId() +";");
-					if(!pega.next())
-					{
-						pega.executaUpdate("DELETE FROM mesas WHERE `mesas_id` = "+ m.getMesaId() +";");
-						m.getMesaVenda().clear();
-						termina = true;
-					}
-					
-					pega.fechaConexao();
-					
-					if(m.getHeader() == UtilCoffe.MESA_DELETAR)
-					{
-						m.getProdutoMesa().setQuantidade(m.getHeaderExtra(), 0);
-						Pedido ped = new Pedido(m.getProdutoMesa(), m.getAtendente(), (m.getMesaId()+1));
-						ped.setHeader(UtilCoffe.PEDIDO_STATUS);
-						painelListener.atualizarPainel(ped);
-					}
-					
-				} catch (ClassNotFoundException | SQLException e) {
-					e.printStackTrace();
-					((Servidor) modoPrograma).enviaObjeto(new CacheMesaHeader(m.getMesaId(), 
-									vendaMesas.get(m.getMesaId()), UtilCoffe.MESA_ERROR), socket);
-					new PainelErro(e);
-				} finally {
-					if(m.getHeader() == UtilCoffe.MESA_LIMPAR)
-					{
-						if(termina)
-						{
-							vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-							atualizarMesa(m.getMesaId());
-							((Servidor) modoPrograma).enviaTodos(m);
-							
-							if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-								painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-										vendaMesas.get(m.getMesaId())));
-							}
-						}					
-					}
-					else if(m.getHeader() == UtilCoffe.MESA_DELETAR)
-					{
-						if(!termina)
-						{
-							if(socket != null) {
-								vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-								atualizarMesa(m.getMesaId());
-							}
-							
-							if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-								painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-										vendaMesas.get(m.getMesaId())));
-							}
-							
-							((Servidor) modoPrograma).enviaTodos(m, socket);
-						}
-						else
-						{
-							vendaMesas.set(m.getMesaId(), m.getMesaVenda());
-							atualizarMesa(m.getMesaId());
-							((Servidor) modoPrograma).enviaTodos(m);
-							
-							if(Usuario.INSTANCE.getOlhando() == m.getMesaId() && socket != null) {
-								painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getMesaId()), 
-										vendaMesas.get(m.getMesaId())));
-							}
-						}	
-					}
-				}
-			}
 		}
 	}
 
@@ -490,7 +274,7 @@ public class PainelMesas extends JPanel implements MesaAlterada, ActionListener
 									CacheMesaHeader mesaCache = new CacheMesaHeader(mesaTransferir, (novaMesa-1), UtilCoffe.MESA_TRANSFERIR);
 									
 									if(config.getModo() == UtilCoffe.SERVER) {
-										atualizarMesa(mesaCache, null);
+										painelVendaMesa.atualizaMesa(mesaCache, null, (short)0);
 									}
 									else {
 										((Client) modoPrograma).enviarObjeto(mesaCache);

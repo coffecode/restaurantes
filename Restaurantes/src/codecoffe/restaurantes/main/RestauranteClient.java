@@ -205,6 +205,8 @@ public class RestauranteClient implements SocketsRecebido, AtualizarPainel
 						framePrincipal.adicionarPainel(painelVendaRapida, "Menu Venda Rapida");
 						framePrincipal.adicionarPainel(painelCozinha, "Menu Cozinha");
 						framePrincipal.adicionarPainel(painelVendaMesa, "Menu Venda Mesa");
+						
+						painelMesas.setPainelVendaMesa(painelVendaMesa);
 						break;
 					}
 				}
@@ -259,8 +261,8 @@ public class RestauranteClient implements SocketsRecebido, AtualizarPainel
 			
 			if(m.getHeader() == UtilCoffe.MESA_TRANSFERIR)
 			{
-				painelMesas.setMesa(m.getMesaId(), new Venda());
-				painelMesas.setMesa(m.getHeaderExtra(), m.getMesaVenda());
+				painelVendaMesa.atualizaMesa(new CacheMesaHeader(m.getMesaId(), new Venda(), 0), null, UtilCoffe.INTERFACE_SETAR_MESA);
+				painelVendaMesa.atualizaMesa(new CacheMesaHeader(m.getHeaderExtra(), m.getMesaVenda(), 0), null, UtilCoffe.INTERFACE_SETAR_MESA);
 				painelMesas.atualizarMesa(m.getMesaId());
 				painelMesas.atualizarMesa(m.getHeaderExtra());
 				
@@ -275,7 +277,7 @@ public class RestauranteClient implements SocketsRecebido, AtualizarPainel
 			}
 			else
 			{
-				painelMesas.setMesa(m.getMesaId(), m.getMesaVenda());
+				painelVendaMesa.atualizaMesa(m, null, UtilCoffe.INTERFACE_SETAR_MESA);
 				painelMesas.atualizarMesa(m.getMesaId());
 				
 				if(Usuario.INSTANCE.getOlhando() == m.getMesaId())

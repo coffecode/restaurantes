@@ -56,6 +56,12 @@ public abstract class UtilCoffe
 	public static final short ENABLED = 10;
 	public static final short UPDATE_FUNCIONARIOS = 11;
 	public static final short UPDATE_CONFIG = 12;
+	
+	public static final short INTERFACE_SETAR_MESA = -1;
+	public static final short INTERFACE_MESA_ADD = 1;
+	public static final short INTERFACE_MESA_ADD_TABELA = 2;
+	public static final short INTERFACE_MESA_REMOVE_TABELA2 = 3;
+	public static final short INTERFACE_MESA_REMOVE_TABELA = 4;
 
 	public static String limpaNumero(String campo)
 	{

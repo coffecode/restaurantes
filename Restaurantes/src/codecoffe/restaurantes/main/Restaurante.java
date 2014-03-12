@@ -191,6 +191,8 @@ public class Restaurante implements SocketsRecebido, AtualizarPainel
 						framePrincipal.adicionarPainel(painelVendas, "Menu Vendas");
 						framePrincipal.adicionarPainel(painelVendaRapida, "Menu Venda Rapida");
 						framePrincipal.adicionarPainel(painelVendaMesa, "Menu Venda Mesa");
+						
+						painelMesas.setPainelVendaMesa(painelVendaMesa);
 						break;
 					}
 				}
@@ -281,7 +283,7 @@ public class Restaurante implements SocketsRecebido, AtualizarPainel
 		}
 		else if(dataRecebida instanceof CacheMesaHeader)
 		{
-			painelMesas.atualizarMesa((CacheMesaHeader) dataRecebida, client);
+			painelVendaMesa.atualizaMesa((CacheMesaHeader) dataRecebida, client, (short)0);
 		}
 		else if(dataRecebida instanceof CacheImpressao)
 		{
