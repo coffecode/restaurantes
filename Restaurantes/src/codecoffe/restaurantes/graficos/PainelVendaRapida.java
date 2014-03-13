@@ -964,7 +964,10 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));
 						}
 						
-						campoValor.setText("");
+						if(addProduto.getProdutoSelecionado() != null)
+							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+						else
+							campoValor.setText("");
 						campoQuantidade.setText("1");
 						campoComentario.setText("");
 						addAdicional.clear();
@@ -1331,7 +1334,10 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 					tabelaModel.refreshTable();
 					campoEntrega.setSelected(false);
 					adicionarDezPorcento.setSelected(false);
-					campoValor.setText("");
+					if(addProduto.getProdutoSelecionado() != null)
+						campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+					else
+						campoValor.setText("");
 					campoQuantidade.setText("1");
 					campoTotal.setText("0,00");
 					campoRecebido.setText("");

@@ -71,6 +71,7 @@ public class PainelCozinha extends JPanel
 	private CacheTodosProdutos todosProdutos;
 	private Configuracao config;
 	private Object modoPrograma;
+	private int cacheLocal, cacheProdutoId, cacheAcao;
 	
 	public PainelCozinha(Configuracao cfg, Object modo, List<Pedido> pedidos, CacheTodosProdutos produtos)
 	{
@@ -78,6 +79,10 @@ public class PainelCozinha extends JPanel
 		modoPrograma = modo;
 		todosPedidos = pedidos;
 		todosProdutos = produtos;
+		
+		cacheLocal = -1;
+		cacheProdutoId = -1;
+		cacheAcao = -1;
 		
 		blacklist = new ArrayList<Integer>();
 		flag_refresh = false;
@@ -120,10 +125,10 @@ public class PainelCozinha extends JPanel
         });
 		
 		timer = new Timer();
-		timer.schedule(new UpdateTask(), 0, 8*1000);
+		timer.schedule(new UpdateTask(), 0, 5*1000);
 
 		timer2 = new Timer();
-		timer2.schedule(new VerificaTask(), 0, 5*1000);
+		timer2.schedule(new VerificaTask(), 0, 4*1000);
 		
 		flag_refresh = true;
 	}
@@ -303,11 +308,23 @@ public class PainelCozinha extends JPanel
 		        			long duration = System.currentTimeMillis() - todosPedidos.get(i).getUltimaEdicao().getTime();
 		        			long seconds = TimeUnit.MILLISECONDS.toSeconds(duration);
 		        			
-		        			if(seconds > 10) // 10 segundos de cooldown para deletar
+		        			if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_REMOVER)
 		        			{
-		        				todosPedidos.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
-		        				todosPedidos.get(i).setUltimaEdicao(new Date());
-								atualizaPedido(todosPedidos.get(i));
+			        			if(seconds > 10) // 10 segundos de cooldown para deletar
+			        			{
+			        				todosPedidos.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
+			        				todosPedidos.get(i).setUltimaEdicao(new Date());
+									atualizaPedido(todosPedidos.get(i));
+			        			}
+		        			}
+		        			else
+		        			{
+			        			if(seconds > 24) // 24 segundos de cooldown para deletar
+			        			{
+			        				todosPedidos.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
+			        				todosPedidos.get(i).setUltimaEdicao(new Date());
+									atualizaPedido(todosPedidos.get(i));
+			        			}
 		        			}
 		        		}
 		        		else if(config.getModo() == UtilCoffe.SERVER)
@@ -446,8 +463,8 @@ public class PainelCozinha extends JPanel
 				if(todosPedidos.get(i).getProduto().compareTo(p.getProduto())) 
 				{
 					if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO 
-							&& todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER && todosPedidos.get(i).getHeader() != UtilCoffe.PEDIDO_DELETA)
-					{
+							&& todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER 
+							&& todosPedidos.get(i).getHeader() != UtilCoffe.PEDIDO_DELETA) {
 						if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_FAZENDO)
 							listaFazendo.add(todosPedidos.get(i));
 						else
@@ -594,6 +611,30 @@ public class PainelCozinha extends JPanel
 				}
 			}
 		}
+		else if(p.getHeader() == UtilCoffe.PEDIDO_TRANSFERE)
+		{
+			for(int i = 0; i < todosPedidos.size(); i++)
+			{
+				if(todosPedidos.get(i).getLocal() == p.getLocal()) {
+					todosPedidos.get(i).setLocal(p.getStatus());
+					todosPedidos.get(i).setStatus(UtilCoffe.PEDIDO_EDITAR);
+				}
+			}
+			
+			if(config.getModo() == UtilCoffe.SERVER)
+			{
+    			try {
+    				Query update = new Query();
+    				update.executaUpdate("UPDATE pedidos SET `local` = " + p.getStatus() + " WHERE `local` = " + p.getLocal());
+    				update.fechaConexao();
+    				((Servidor) modoPrograma).enviaTodos(p);
+				} catch (ClassNotFoundException | SQLException e) {
+					e.printStackTrace();
+				}	
+			}
+			
+			flag_refresh = true;
+		}
 		else if(p.getHeader() == UtilCoffe.PEDIDO_DELETA) // deleta
 		{
 			for(int i = 0; i < todosPedidos.size(); i++)
@@ -635,7 +676,7 @@ public class PainelCozinha extends JPanel
 		else if(p.getHeader() == UtilCoffe.PEDIDO_STATUS) // edita status
 		{
 			if(p.getIdUnico() == 0)
-			{
+			{	
 				buscarPedidos(p);
 			}
 			else
@@ -647,14 +688,11 @@ public class PainelCozinha extends JPanel
 						if(p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
 							todosPedidos.get(i).getProduto().setQuantidade(pNovo.getQuantidade(), 0);
 						
-						//if(p.getStatus() == UtilCoffe.PEDIDO_DELETADO || p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
-							//avisaPedido(p, p.getStatus());
-						
 						todosPedidos.get(i).setUltimaEdicao(new Date());
 						todosPedidos.get(i).setHeader(p.getHeader());
 						todosPedidos.get(i).setStatus(p.getStatus());
 						
-						final int idAgora = i;
+						/*final int idAgora = i;
 						SwingUtilities.invokeLater(new Runnable() {
 							@Override
 							public void run() {
@@ -666,9 +704,9 @@ public class PainelCozinha extends JPanel
 									pp.refreshQuantidade();	
 								}	
 							}
-						});
+						});*/
 						
-						//flag_refresh = true;
+						flag_refresh = true;
 						
 						if(config.getModo() == UtilCoffe.SERVER)
 						{
@@ -688,6 +726,9 @@ public class PainelCozinha extends JPanel
 						break;
 					}
 				}
+				
+				if(p.getStatus() == UtilCoffe.PEDIDO_DELETADO || p.getStatus() == UtilCoffe.PEDIDO_EDITAR)
+					avisaPedido(p, p.getStatus());
 			}
 		}
 	}
@@ -696,29 +737,40 @@ public class PainelCozinha extends JPanel
 	{
 		if(isVisible())
 		{
-			NotificationManager.setLocation(2);
-			String local = "";
-			
-			if(p.getLocal() == 0) {
-				local = "Balcão";
-			}
-			else {
-				local = config.getTipoNome() + " " + p.getLocal();
-			}
-			
-			switch(tipo)
+			if(cacheLocal == p.getLocal() && cacheProdutoId == p.getProduto().getIdUnico() && cacheAcao == tipo)
 			{
-				case UtilCoffe.PEDIDO_DELETADO:
-				{
-					NotificationManager.showNotification(this, "Pedido Deletado (" + local + " - " 
-								+ p.getProduto().getNome() + ")", new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_cancel.png"))).setDisplayTime(5000);
-					break;
+				// evitar pedidos repetidos
+			}
+			else
+			{
+				cacheLocal = p.getLocal();
+				cacheProdutoId = p.getProduto().getIdUnico();
+				cacheAcao = tipo;
+				
+				NotificationManager.setLocation(2);
+				String local = "";
+
+				if(p.getLocal() == 0) {
+					local = "Balcão";
 				}
-				case UtilCoffe.PEDIDO_EDITAR:
+				else {
+					local = config.getTipoNome() + " " + p.getLocal();
+				}
+
+				switch(tipo)
 				{
-					NotificationManager.showNotification(this, "Pedido Alterado (" + local + " - " 
-							+ p.getProduto().getNome() + ")", new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_warning.png"))).setDisplayTime(5000);
-					break;		
+					case UtilCoffe.PEDIDO_DELETADO:
+					{
+						NotificationManager.showNotification(this, "Pedido Deletado (" + local + " - " 
+								+ p.getProduto().getNome() + ")", new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_cancel.png"))).setDisplayTime(5000);
+						break;
+					}
+					case UtilCoffe.PEDIDO_EDITAR:
+					{
+						NotificationManager.showNotification(this, "Pedido Alterado (" + local + " - " 
+								+ p.getProduto().getNome() + ")", new ImageIcon(getClass().getClassLoader().getResource("imgs/notifications_warning.png"))).setDisplayTime(5000);
+						break;		
+					}
 				}
 			}
 		}

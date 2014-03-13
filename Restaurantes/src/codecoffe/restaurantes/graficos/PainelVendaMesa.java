@@ -1369,7 +1369,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			public void run() {
 				tabelaModel.refreshTable();
 				adicionarDezPorcento.setSelected(false);
-				campoValor.setText("");
+				
+				if(addProduto.getProdutoSelecionado() != null)
+					campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+				else
+					campoValor.setText("");
+					
 				campoQuantidade.setText("1");
 				campoTotal.setText("0,00");
 				campoRecebido.setText("");
@@ -2209,6 +2214,11 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 							painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDA_MESA, new Integer(m.getHeaderExtra()), 
 									mesaListener.getVendaMesas().get(m.getHeaderExtra())));
 						}
+						
+						Pedido ped = new Pedido(new ProdutoVenda(), m.getAtendente(), (m.getMesaId()+1));
+						ped.setStatus((m.getHeaderExtra()+1));
+						ped.setHeader(UtilCoffe.PEDIDO_TRANSFERE);
+						painelListener.atualizarPainel(ped);
 							
 						NotificationManager.setLocation(2);
 						NotificationManager.showNotification(this, config.getTipoNome() + " " + (m.getMesaId()+1) + " transferida para " + (m.getHeaderExtra()+1), 

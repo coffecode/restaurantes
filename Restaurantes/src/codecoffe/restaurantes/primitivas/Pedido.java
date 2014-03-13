@@ -55,6 +55,11 @@ public class Pedido implements Serializable
 	{
 		return this.nomeAtendido;
 	}
+
+	public void setLocal(int local)
+	{
+		this.local = local;
+	}
 	
 	public int getLocal()
 	{

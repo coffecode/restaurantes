@@ -22,6 +22,7 @@ public abstract class UtilCoffe
 	public static final short PEDIDO_DELETA = 2;
 	public static final short PEDIDO_STATUS = 3;
 	public static final short PEDIDO_EDITADO = 4;
+	public static final short PEDIDO_TRANSFERE = 5;
 
 	public static final short CLASSE_VENDA_MESA = 1;
 	public static final short CLASSE_VENDA_RAPIDA = 2;
