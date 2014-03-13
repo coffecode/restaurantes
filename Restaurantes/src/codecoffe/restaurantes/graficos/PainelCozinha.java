@@ -434,7 +434,7 @@ public class PainelCozinha extends JPanel
 		}
 	}
 	
-	public void buscarPedidos(Pedido p)
+	public synchronized void buscarPedidos(Pedido p)
 	{
 		List<Pedido> listaNormal = new ArrayList<Pedido>();
 		List<Pedido> listaFazendo = new ArrayList<Pedido>();
@@ -445,7 +445,8 @@ public class PainelCozinha extends JPanel
 			{
 				if(todosPedidos.get(i).getProduto().compareTo(p.getProduto())) 
 				{
-					if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO && todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER)
+					if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO 
+							&& todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER && todosPedidos.get(i).getHeader() != UtilCoffe.PEDIDO_DELETADO)
 					{
 						if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_FAZENDO)
 							listaFazendo.add(todosPedidos.get(i));
@@ -485,7 +486,7 @@ public class PainelCozinha extends JPanel
 				if(listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_ADICIONA || listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_EDITADO)
 				{
 					listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
-					listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);
+					//listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);
 				}
 				else
 				{
