@@ -446,7 +446,7 @@ public class PainelCozinha extends JPanel
 				if(todosPedidos.get(i).getProduto().compareTo(p.getProduto())) 
 				{
 					if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO 
-							&& todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER && todosPedidos.get(i).getHeader() != UtilCoffe.PEDIDO_DELETADO)
+							&& todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER && todosPedidos.get(i).getHeader() != UtilCoffe.PEDIDO_DELETA)
 					{
 						if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_FAZENDO)
 							listaFazendo.add(todosPedidos.get(i));
