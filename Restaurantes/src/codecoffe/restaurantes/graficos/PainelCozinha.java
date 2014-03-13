@@ -433,6 +433,98 @@ public class PainelCozinha extends JPanel
 			});
 		}
 	}
+	
+	public void buscarPedidos(Pedido p)
+	{
+		List<Pedido> listaNormal = new ArrayList<Pedido>();
+		List<Pedido> listaFazendo = new ArrayList<Pedido>();
+		
+		for(int i = 0; i < todosPedidos.size(); i++)
+		{
+			if(todosPedidos.get(i).getLocal() == p.getLocal())
+			{
+				if(todosPedidos.get(i).getProduto().compareTo(p.getProduto())) 
+				{
+					if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO && todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER)
+					{
+						if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_FAZENDO)
+							listaFazendo.add(todosPedidos.get(i));
+						else
+							listaNormal.add(todosPedidos.get(i));	
+					}
+				}
+			}
+		}
+		
+		int quantidade = p.getProduto().getQuantidade();
+		if(quantidade < 0)
+			quantidade = 1;
+		
+		for(int i = 0; i < listaNormal.size(); i++)
+		{
+			if(listaNormal.get(i).getProduto().getQuantidade() - quantidade > 0)
+			{
+				if(listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_ADICIONA || listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_EDITADO)
+				{
+					listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_EDITADO);
+					listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_NOVO);
+					listaNormal.get(i).getProduto().setQuantidade(quantidade, 2);
+				}
+				else
+				{
+					listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
+					listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_EDITAR);
+					listaNormal.get(i).getProduto().setQuantidade(quantidade, 2);					
+				}
+
+				atualizaPedido(listaNormal.get(i));
+				quantidade = 0;
+			}
+			else
+			{
+				if(listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_ADICIONA || listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_EDITADO)
+				{
+					listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
+					listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);
+				}
+				else
+				{
+					listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
+					listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);				
+				}
+
+				atualizaPedido(listaNormal.get(i));
+				quantidade -= listaNormal.get(i).getProduto().getQuantidade();
+			}
+			
+			if(quantidade <= 0)
+				break;
+		}
+		
+		if(quantidade > 0)
+		{
+			for(int i = 0; i < listaFazendo.size(); i++)
+			{
+				if(listaFazendo.get(i).getProduto().getQuantidade() - quantidade > 0)
+				{
+					listaFazendo.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
+					listaFazendo.get(i).setStatus(UtilCoffe.PEDIDO_EDITAR);
+					atualizaPedido(listaFazendo.get(i));
+					quantidade = 0;
+				}
+				else
+				{
+					listaFazendo.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
+					listaFazendo.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);
+					atualizaPedido(listaFazendo.get(i));
+					quantidade -= listaFazendo.get(i).getProduto().getQuantidade();
+				}
+				
+				if(quantidade <= 0)
+					break;
+			}			
+		}
+	}
 		
 	public synchronized void atualizaPedido(Pedido p)
 	{		
@@ -543,93 +635,7 @@ public class PainelCozinha extends JPanel
 		{
 			if(p.getIdUnico() == 0)
 			{
-				List<Pedido> listaNormal = new ArrayList<Pedido>();
-				List<Pedido> listaFazendo = new ArrayList<Pedido>();
-				
-				for(int i = 0; i < todosPedidos.size(); i++)
-				{
-					if(todosPedidos.get(i).getLocal() == p.getLocal())
-					{
-						if(todosPedidos.get(i).getProduto().compareTo(p.getProduto())) 
-						{
-							if(todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_DELETADO && todosPedidos.get(i).getStatus() != UtilCoffe.PEDIDO_REMOVER)
-							{
-								if(todosPedidos.get(i).getStatus() == UtilCoffe.PEDIDO_FAZENDO)
-									listaFazendo.add(todosPedidos.get(i));
-								else
-									listaNormal.add(todosPedidos.get(i));	
-							}
-						}
-					}
-				}
-				
-				int quantidade = p.getProduto().getQuantidade();
-				if(quantidade < 0)
-					quantidade = 1;
-				
-				for(int i = 0; i < listaNormal.size(); i++)
-				{
-					if(listaNormal.get(i).getProduto().getQuantidade() - quantidade > 0)
-					{
-						if(listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_ADICIONA || listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_EDITADO)
-						{
-							listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_EDITADO);
-							listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_NOVO);
-							listaNormal.get(i).getProduto().setQuantidade(quantidade, 2);
-						}
-						else
-						{
-							listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
-							listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_EDITAR);
-							listaNormal.get(i).getProduto().setQuantidade(quantidade, 2);					
-						}
-
-						atualizaPedido(listaNormal.get(i));
-						quantidade = 0;
-					}
-					else
-					{
-						if(listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_ADICIONA || listaNormal.get(i).getHeader() == UtilCoffe.PEDIDO_EDITADO)
-						{
-							listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
-						}
-						else
-						{
-							listaNormal.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
-							listaNormal.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);				
-						}
-
-						atualizaPedido(listaNormal.get(i));
-						quantidade -= listaNormal.get(i).getProduto().getQuantidade();
-					}
-					
-					if(quantidade <= 0)
-						break;
-				}
-				
-				if(quantidade > 0)
-				{
-					for(int i = 0; i < listaFazendo.size(); i++)
-					{
-						if(listaFazendo.get(i).getProduto().getQuantidade() - quantidade > 0)
-						{
-							listaFazendo.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
-							listaFazendo.get(i).setStatus(UtilCoffe.PEDIDO_EDITAR);
-							atualizaPedido(listaFazendo.get(i));
-							quantidade = 0;
-						}
-						else
-						{
-							listaFazendo.get(i).setHeader(UtilCoffe.PEDIDO_STATUS);
-							listaFazendo.get(i).setStatus(UtilCoffe.PEDIDO_DELETADO);
-							atualizaPedido(listaFazendo.get(i));
-							quantidade -= listaFazendo.get(i).getProduto().getQuantidade();
-						}
-						
-						if(quantidade <= 0)
-							break;
-					}			
-				}
+				buscarPedidos(p);
 			}
 			else
 			{
