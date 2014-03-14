@@ -10,11 +10,14 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.zip.DataFormatException;
 
 import javax.swing.AbstractButton;
 import javax.swing.DefaultCellEditor;
@@ -36,6 +39,9 @@ import javax.swing.ToolTipManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.DataFormatter;
+
 import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.eventos.AtualizarPainel;
 import codecoffe.restaurantes.mysql.Query;
@@ -55,6 +61,7 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
+import com.alee.laf.text.WebTextField;
 
 public class TabelaVendas extends WebPanel implements ActionListener
 {
@@ -65,6 +72,7 @@ public class TabelaVendas extends WebPanel implements ActionListener
 	private JTable tabela;
 	private DefaultTableModel tabelaModel;
 	private WebDateField dataInicial, dataFinal;
+	private JComboBox<String> horaInicial, horaFinal;
 	private WebButton pesquisar, exportarPDF, exportarExcel, opcoesTabela, verGraficoTotal;
 	private JComboBox<String> paginacao;
 	private boolean configDelivery, configDez;
@@ -178,6 +186,17 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		dataFinal.setHorizontalAlignment(SwingConstants.CENTER);
 		dataFinal.setMinimumSize(new Dimension(130, 35));
 		dataFinal.setEditable(false);
+		String[] tiposHora = {"00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14","15", "16", "17", "18", "19", "20", "21", "22", "23"};
+		
+		horaInicial = new JComboBox<>(tiposHora);
+		horaInicial.setMinimumSize(new Dimension(50, 35));
+		horaInicial.setEditable(true);
+
+
+		horaFinal = new JComboBox<>(tiposHora);
+		horaFinal.setMinimumSize(new Dimension(50, 35));
+		horaFinal.setEditable(true);
+		
 		
 		pesquisar = new WebButton("Pesquisar");
 		pesquisar.setRolloverShine(true);
@@ -225,8 +244,10 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		
 		add(new JLabel("Início: "), "gapleft 10px, split 5");
 		add(dataInicial, "gapleft 10px");
+		add(horaInicial, "gapleft 10px");
 		add(new JLabel("Fim: "), "gapleft 20px");
 		add(dataFinal, "gapleft 10px");
+		add(horaFinal, "gapleft 10px");
 		add(pesquisar, "gapleft 30px");
 		add(opcoesTabela, "align 100%, gapleft 30px, split 4, span");
 		add(exportarPDF, "align 100%");
@@ -421,10 +442,22 @@ public class TabelaVendas extends WebPanel implements ActionListener
 	
 	public String gerarPesquisa()
 	{		
-		SimpleDateFormat formataDataSQL = new SimpleDateFormat("yyyy-M-dd");
+		
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		String formatInicial = df.format(dataInicial.getDate());
+		String formatFinal = df.format(dataFinal.getDate());
+		 
+		
+		
+		String timestampInicial = formatInicial+" "+  horaInicial.getSelectedItem().toString()+":00:00";
+		String timestampFinal = formatFinal +" "+ horaFinal.getSelectedItem().toString()+":00:00";
+		
+		
+		System.out.println(timestampInicial + "testeee");
+		
 		String formatacao = "SELECT * FROM vendas WHERE data BETWEEN ('" 
-				+ formataDataSQL.format(dataInicial.getDate()) + "') " 
-				+ "AND ('" + formataDataSQL.format(dataFinal.getDate()) + "') ";
+				+ timestampInicial + "') " 
+				+ "AND ('" +timestampFinal + "') ";
 		
 		if(filtroCampoDelivery.getSelectedIndex() > 0)
 		{
