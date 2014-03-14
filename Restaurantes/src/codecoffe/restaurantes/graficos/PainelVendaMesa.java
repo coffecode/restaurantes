@@ -1626,7 +1626,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			String formatacao;
 			Query envia = new Query();
 			formatacao = "INSERT INTO vendas(total, atendente, ano, mes, dia_mes, dia_semana, horario, forma_pagamento, valor_pago, "
-					+ "troco, fiado_id, caixa, delivery, dezporcento, data, permanencia) VALUES('"
+					+ "troco, fiado_id, caixa, delivery, dezporcento, permanencia) VALUES('"
 			+ v.getTotal() +
 			"', '" + v.getAtendente() +
 			"', " + v.getAno() + ", "
@@ -1635,7 +1635,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			+ v.getDia_semana() +
 			", '" + v.getHorario() + "', '" + v.getForma_pagamento() + "', '" + v.getValor_pago() + "', '" + v.getTroco()
 			+ "', " + v.getFiado_id() + ", " + (v.getVendaMesa().getMesaId()+1) + ", '0,00', '" + v.getDezporcento() 
-			+ "', CURDATE(), '" + minutes + "');";
+			+ "', '" + minutes + "');";
 			envia.executaUpdate(formatacao);				
 			
 			Query pega = new Query();

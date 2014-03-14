@@ -1035,7 +1035,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 			String formatacao;
 			Query envia = new Query();
 			formatacao = "INSERT INTO vendas(total, atendente, ano, mes, dia_mes, dia_semana, horario, forma_pagamento, valor_pago, troco, "
-					+ "fiado_id, caixa, delivery, dezporcento, data, permanencia) VALUES('"
+					+ "fiado_id, caixa, delivery, dezporcento, permanencia) VALUES('"
 			+ v.getTotal() +
 			"', '" + v.getAtendente() +
 			"', " + v.getAno() + ", "
@@ -1043,7 +1043,7 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 			+ v.getDia_mes() + ", "
 			+ v.getDia_semana() +
 			", '" + v.getHorario() + "', '" + v.getForma_pagamento() + "', '" + v.getValor_pago() + "', '" + v.getTroco() + 
-			"', " + v.getFiado_id() + ", 0, '" + v.getDelivery() + "', '" + v.getDezporcento() + "', CURDATE(), '0');";
+			"', " + v.getFiado_id() + ", 0, '" + v.getDelivery() + "', '" + v.getDezporcento() + "', '0');";
 			envia.executaUpdate(formatacao);
 			
 			Query pega = new Query();
