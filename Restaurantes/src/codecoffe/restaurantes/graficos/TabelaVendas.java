@@ -439,12 +439,14 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		String formatInicial = df.format(dataInicial.getDate());
 		String formatFinal = df.format(dataFinal.getDate());
 		
-		String timestampInicial = formatInicial + " " + (horaInicial.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
-		String timestampFinal = formatFinal + " " + (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
+		String horaInicio = (horaInicial.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
+		String horaFim = (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
 		
 		String formatacao = "SELECT * FROM vendas WHERE data BETWEEN ('" 
-				+ timestampInicial + "') " 
-				+ "AND ('" +timestampFinal + "') ";
+				+ formatInicial + "') " 
+				+ "AND ('" + formatFinal + "') ";
+		
+		formatacao += "AND hora BETWEEN ('" + horaInicio + "') AND ('" + horaFim + "') ";
 		
 		if(filtroCampoDelivery.getSelectedIndex() > 0)
 		{
