@@ -893,6 +893,8 @@ public class PainelClientes extends JPanel implements ActionListener
 						
 						pega.fechaConexao();
 						receberCliente(clienteSelecionado);
+						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDAS));
+						painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_FIADOS));
 					} catch (NumberFormatException | ClassNotFoundException | SQLException e1) {
 						e1.printStackTrace();
 						new PainelErro(e1);

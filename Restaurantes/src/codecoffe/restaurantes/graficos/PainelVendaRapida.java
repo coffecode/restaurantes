@@ -272,18 +272,13 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		tabelaPedido.setModel(tabelaModel);
 		tabelaPedido.getColumnModel().getColumn(0).setMinWidth(70);
 		tabelaPedido.getColumnModel().getColumn(0).setMaxWidth(70);
-		tabelaPedido.getColumnModel().getColumn(1).setMinWidth(205);
-		tabelaPedido.getColumnModel().getColumn(1).setMaxWidth(500);
-		tabelaPedido.getColumnModel().getColumn(2).setMinWidth(45);
-		tabelaPedido.getColumnModel().getColumn(2).setMaxWidth(100);
-		tabelaPedido.getColumnModel().getColumn(3).setMinWidth(80);
-		tabelaPedido.getColumnModel().getColumn(3).setMaxWidth(200);				
-		tabelaPedido.getColumnModel().getColumn(4).setMinWidth(200);
-		tabelaPedido.getColumnModel().getColumn(4).setMaxWidth(700);
-		tabelaPedido.getColumnModel().getColumn(5).setMinWidth(200);
-		tabelaPedido.getColumnModel().getColumn(5).setMaxWidth(700);
+		tabelaPedido.getColumnModel().getColumn(1).setPreferredWidth(180);
+		tabelaPedido.getColumnModel().getColumn(2).setPreferredWidth(45);
+		tabelaPedido.getColumnModel().getColumn(3).setPreferredWidth(80);
+		tabelaPedido.getColumnModel().getColumn(4).setPreferredWidth(200);
+		tabelaPedido.getColumnModel().getColumn(5).setPreferredWidth(200);
 		tabelaPedido.getColumnModel().getColumn(6).setMinWidth(60);
-		tabelaPedido.getColumnModel().getColumn(6).setMaxWidth(65);
+		tabelaPedido.getColumnModel().getColumn(6).setMaxWidth(60);
 		tabelaPedido.setRowHeight(30);
 		tabelaPedido.getTableHeader().setReorderingAllowed(false);
 
@@ -444,8 +439,8 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 
 		painelPagamento.add(imprimir, "cell 3 8, span, align center");
 
-		divisaoPainel.addTab("Venda Rápida", new ImageIcon(getClass().getClassLoader().getResource("imgs/vrapida_mini.png")), painelProdutos1, "Gerenciar o Pedido.");		
-		divisaoPainel.addTab("Pagamento", new ImageIcon(getClass().getClassLoader().getResource("imgs/recibo_mini.png")), painelPagamento, "Pagamento do Pedido.");		
+		divisaoPainel.addTab("Venda Rápida", new ImageIcon(getClass().getClassLoader().getResource("imgs/vrapida_mini.png")), painelProdutos1, "Gerenciar o Pedido (ALT + W)");		
+		divisaoPainel.addTab("Pagamento", new ImageIcon(getClass().getClassLoader().getResource("imgs/recibo_mini.png")), painelPagamento, "Pagamento do Pedido (ALT + E)");		
 		add(divisaoPainel);
 
 		taxaEntrega = 0.0;
@@ -471,18 +466,105 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 					ordem.add(adicionarProduto);
 					FocusTraversal ordemFocus = new FocusTraversal(ordem);
 					setFocusTraversalPolicy(ordemFocus);
+					
+					addProduto.requestFocus();
 				}
 				else
 				{
 					ArrayList<Component> ordem = new ArrayList<Component>();
+					
+					ordem.add(campoEntrega);
+					
+					if(config.isDezPorcentoRapida())
+						ordem.add(adicionarDezPorcento);
+					
+					ordem.add(campoFuncionario);
+					ordem.add(campoForma);
+					ordem.add(escolherCliente);
 					ordem.add(campoRecebido);
 					ordem.add(finalizarVenda);
 					ordem.add(imprimir);
 					FocusTraversal ordemFocus = new FocusTraversal(ordem);
 					setFocusTraversalPolicy(ordemFocus);
+					
+					campoEntrega.requestFocus();
 				}
 			}
 		});
+		
+		ActionMap actionMap = getActionMap();
+		actionMap.put("botao1", new AtalhoAction(0));
+		actionMap.put("botao2", new AtalhoAction(1));
+		actionMap.put("botao3", new AtalhoAction(2));
+		actionMap.put("botao4", new AtalhoAction(3));
+		setActionMap(actionMap);
+		
+		InputMap imap = getInputMap(JPanel.WHEN_IN_FOCUSED_WINDOW);
+		imap.put(KeyStroke.getKeyStroke("control Q"), "botao1");
+		imap.put(KeyStroke.getKeyStroke("alt Q"), "botao1");
+		imap.put(KeyStroke.getKeyStroke("alt ENTER"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("alt A"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("control A"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("alt W"), "botao3");
+		imap.put(KeyStroke.getKeyStroke("alt E"), "botao4");
+		
+		TooltipManager.addTooltip(adicionarProduto, "ALT + A", TooltipWay.up, 1000);
+		TooltipManager.addTooltip(campoQuantidade, "ALT + Q", TooltipWay.up, 1000);
+		
+		campoEntrega.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"), "enter");
+		campoEntrega.getActionMap().put("enter", new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				campoEntrega.doClick();
+			}
+		});
+		
+		adicionarDezPorcento.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"), "enter");
+		adicionarDezPorcento.getActionMap().put("enter", new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				adicionarDezPorcento.doClick();
+			}
+		});
+	}
+	
+	private class AtalhoAction extends AbstractAction {
+		private static final long serialVersionUID = 1L;
+		private int tipo = 0;
+		
+		public AtalhoAction(int tipo) {
+	        this.tipo = tipo;
+	    }		
+		
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+        	switch(this.tipo)
+        	{
+        		case 0:
+        		{
+        			campoQuantidade.requestFocus();
+        			break;
+        		}
+        		case 1:
+        		{
+        			adicionarProduto.doClick();
+        			break;
+        		}
+        		case 2:
+        		{
+        			divisaoPainel.setSelectedIndex(0);
+        			break;
+        		}
+        		case 3:
+        		{
+        			divisaoPainel.setSelectedIndex(1);
+        			break;
+        		}
+        	}
+        }
 	}
 
 	class OpcoesCellComponent extends JPanel
@@ -1311,54 +1393,57 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				if(aviso.getTipo() == 1)
+				if(aviso != null)
 				{
-					if(!config.getReciboFim())
-						JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.INFORMATION_MESSAGE);
-					else
+					if(aviso.getTipo() == 1)
 					{
-						int opcao = JOptionPane.showConfirmDialog(null, aviso.getMensagem() + "\n\nDeseja imprimir o recibo?", "Venda #" + aviso.getTitulo(), JOptionPane.YES_NO_OPTION);
-						if(opcao == JOptionPane.YES_OPTION)
+						if(!config.getReciboFim())
+							JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.INFORMATION_MESSAGE);
+						else
 						{
-							criarRecibo();
-						}			
-					}
-					
-					for(int i = 0; i < vendaRapidaNova.getQuantidadeProdutos(); i++)
-					{
-						Pedido ped = new Pedido(vendaRapidaNova.getProduto(i), campoFuncionario.getSelectedItem().toString(), 0);
-						painelListener.atualizarPainel(ped);
-					}
+							int opcao = JOptionPane.showConfirmDialog(null, aviso.getMensagem() + "\n\nDeseja imprimir o recibo?", "Venda #" + aviso.getTitulo(), JOptionPane.YES_NO_OPTION);
+							if(opcao == JOptionPane.YES_OPTION)
+							{
+								criarRecibo();
+							}			
+						}
 
-					vendaRapidaNova.clear();
-					tabelaModel.refreshTable();
-					campoEntrega.setSelected(false);
-					adicionarDezPorcento.setSelected(false);
-					if(addProduto.getProdutoSelecionado() != null)
-						campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+						for(int i = 0; i < vendaRapidaNova.getQuantidadeProdutos(); i++)
+						{
+							Pedido ped = new Pedido(vendaRapidaNova.getProduto(i), campoFuncionario.getSelectedItem().toString(), 0);
+							painelListener.atualizarPainel(ped);
+						}
+
+						vendaRapidaNova.clear();
+						tabelaModel.refreshTable();
+						campoEntrega.setSelected(false);
+						adicionarDezPorcento.setSelected(false);
+						if(addProduto.getProdutoSelecionado() != null)
+							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+						else
+							campoValor.setText("");
+						campoQuantidade.setText("1");
+						campoTotal.setText("0,00");
+						campoRecebido.setText("");
+						campoTroco.setText("0,00");
+						campoForma.setSelectedIndex(0);
+						campoComentario.setText("");
+						addAdicional.clear();
+						addRemover.clear();			
+						adicionaisPainel.removeAll();
+						adicionaisPainel.revalidate();
+						adicionaisPainel.repaint();
+						clienteVenda = null;
+						taxaOpcional = 0.0;
+						adicionarDezPorcento.setText("+ 10% Opcional (R$0,00)");
+						escolherCliente.setText("Escolher");
+						campoRecibo.setText("### Nenhum produto marcado ###");
+					}
 					else
-						campoValor.setText("");
-					campoQuantidade.setText("1");
-					campoTotal.setText("0,00");
-					campoRecebido.setText("");
-					campoTroco.setText("0,00");
-					campoForma.setSelectedIndex(0);
-					campoComentario.setText("");
-					addAdicional.clear();
-					addRemover.clear();			
-					adicionaisPainel.removeAll();
-					adicionaisPainel.revalidate();
-					adicionaisPainel.repaint();
-					clienteVenda = null;
-					taxaOpcional = 0.0;
-					adicionarDezPorcento.setText("+ 10% Opcional (R$0,00)");
-					escolherCliente.setText("Escolher");
-					campoRecibo.setText("### Nenhum produto marcado ###");
+					{
+						JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.ERROR_MESSAGE);
+					}				
 				}
-				else
-				{
-					JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.ERROR_MESSAGE);
-				}				
 			}
 		});	
 	}
@@ -1395,5 +1480,16 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 		addProduto.refreshModel();
 		for(int i = 0; i < addAdicional.size(); i++)
 			addAdicional.get(i).refreshModel();
+	}
+	
+	public void setFuncionarioSelected(String nome)
+	{
+		for(int i = 0; i < campoFuncionario.getItemCount(); i++)
+		{
+			if(campoFuncionario.getItemAt(i).toString().equals(nome)) {
+				campoFuncionario.setSelectedIndex(i);
+				break;
+			}
+		}
 	}
 }

@@ -17,6 +17,7 @@ import com.alee.extended.window.WebPopOver;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.text.WebTextField;
+
 import java.awt.event.*;
 import java.util.List;
 
@@ -291,6 +292,14 @@ public class PainelMesas extends JPanel implements ActionListener
 							new PainelErro(e1);
 						}
 					}
+	            });
+	            
+	    		mesaCampo.addKeyListener(new KeyAdapter() {
+	            	public void keyPressed(KeyEvent e) {
+	            		if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+	            			botao.doClick();
+	            		}
+	                }
 	            });
 	            
 	            popOver.add(botao, "gaptop 15px, split 2, span, align center");

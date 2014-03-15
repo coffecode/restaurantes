@@ -88,7 +88,7 @@ public class PainelPedido extends WebPanel
 			formataNome += " (" + p.getProduto().getComentario() + ")";
 		
 		labelProduto = new JLabel("<html><b>" + formataNome + ".</b></html>");
-		labelProduto.setPreferredSize(new Dimension(400, 30));
+		labelProduto.setPreferredSize(new Dimension(600, 30));
 		
 		labelTempo = new JLabel("0 segundos atrás.");
 		labelTempo.setPreferredSize(new Dimension(105, 30));

@@ -202,8 +202,8 @@ public class RestauranteClient implements SocketsRecebido, AtualizarPainel
 					{
 						framePrincipal.adicionarPainel(painelMesas, "Menu Mesas");
 						framePrincipal.adicionarPainel(painelClientes, "Menu Clientes");
-						framePrincipal.adicionarPainel(painelVendaRapida, "Menu Venda Rapida");
 						framePrincipal.adicionarPainel(painelCozinha, "Menu Cozinha");
+						framePrincipal.adicionarPainel(painelVendaRapida, "Menu Venda Rapida");
 						framePrincipal.adicionarPainel(painelVendaMesa, "Menu Venda Mesa");
 						
 						painelMesas.setPainelVendaMesa(painelVendaMesa);

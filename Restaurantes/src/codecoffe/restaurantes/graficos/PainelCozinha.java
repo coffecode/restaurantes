@@ -319,7 +319,7 @@ public class PainelCozinha extends JPanel
 		        			}
 		        			else
 		        			{
-			        			if(seconds > 24) // 24 segundos de cooldown para deletar
+			        			if(seconds > 15) // 15 segundos de cooldown para deletar
 			        			{
 			        				todosPedidos.get(i).setHeader(UtilCoffe.PEDIDO_DELETA);
 			        				todosPedidos.get(i).setUltimaEdicao(new Date());
@@ -692,7 +692,7 @@ public class PainelCozinha extends JPanel
 						todosPedidos.get(i).setHeader(p.getHeader());
 						todosPedidos.get(i).setStatus(p.getStatus());
 						
-						/*final int idAgora = i;
+						final int idAgora = i;
 						SwingUtilities.invokeLater(new Runnable() {
 							@Override
 							public void run() {
@@ -704,9 +704,9 @@ public class PainelCozinha extends JPanel
 									pp.refreshQuantidade();	
 								}	
 							}
-						});*/
+						});
 						
-						flag_refresh = true;
+						//flag_refresh = true;
 						
 						if(config.getModo() == UtilCoffe.SERVER)
 						{

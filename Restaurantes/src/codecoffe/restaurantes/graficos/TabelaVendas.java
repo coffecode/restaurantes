@@ -11,14 +11,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.text.DateFormat;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
-import java.util.zip.DataFormatException;
-
 import javax.swing.AbstractButton;
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
@@ -39,9 +36,6 @@ import javax.swing.ToolTipManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
-import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.DataFormatter;
-
 import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.eventos.AtualizarPainel;
 import codecoffe.restaurantes.mysql.Query;
@@ -61,7 +55,6 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
-import com.alee.laf.text.WebTextField;
 
 public class TabelaVendas extends WebPanel implements ActionListener
 {
@@ -179,28 +172,27 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		
 		dataInicial = new WebDateField(new Date());
 		dataInicial.setHorizontalAlignment(SwingConstants.CENTER);
-		dataInicial.setMinimumSize(new Dimension(130, 35));
+		dataInicial.setMinimumSize(new Dimension(120, 35));
 		dataInicial.setEditable(false);
 		
 		dataFinal = new WebDateField(new Date());
 		dataFinal.setHorizontalAlignment(SwingConstants.CENTER);
-		dataFinal.setMinimumSize(new Dimension(130, 35));
+		dataFinal.setMinimumSize(new Dimension(120, 35));
 		dataFinal.setEditable(false);
-		String[] tiposHora = {"00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14","15", "16", "17", "18", "19", "20", "21", "22", "23"};
+		String[] tiposHora = 	{"00h00", "01h00", "02h00", "03h00", "04h00", "05h00", "06h00", "07h00", 
+								"08h00", "09h00", "10h00", "11h00", "12h00", "13h00", "14h00","15h00", 
+								"16h00", "17h00", "18h00", "19h00", "20h00", "21h00", "22h00", "23h00"};
 		
 		horaInicial = new JComboBox<>(tiposHora);
-		horaInicial.setMinimumSize(new Dimension(50, 35));
-		horaInicial.setEditable(true);
-
+		horaInicial.setMinimumSize(new Dimension(75, 35));
 
 		horaFinal = new JComboBox<>(tiposHora);
-		horaFinal.setMinimumSize(new Dimension(50, 35));
-		horaFinal.setEditable(true);
-		
+		horaFinal.setMinimumSize(new Dimension(75, 35));
+		horaFinal.setSelectedIndex((horaFinal.getItemCount()-1));
 		
 		pesquisar = new WebButton("Pesquisar");
 		pesquisar.setRolloverShine(true);
-		pesquisar.setPreferredSize(new Dimension(120, 35));
+		pesquisar.setPreferredSize(new Dimension(130, 35));
 		pesquisar.setHorizontalTextPosition(AbstractButton.LEFT);
 		pesquisar.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/pesquisa_mini.png")));
 		pesquisar.addActionListener(this);
@@ -242,13 +234,13 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		paginacao.setMaximumRowCount(5);
 		paginacao.setMinimumSize(new Dimension(120, 30));
 		
-		add(new JLabel("Início: "), "gapleft 10px, split 5");
+		add(new JLabel("Início: "), "gapleft 10px, split 7");
 		add(dataInicial, "gapleft 10px");
 		add(horaInicial, "gapleft 10px");
 		add(new JLabel("Fim: "), "gapleft 20px");
 		add(dataFinal, "gapleft 10px");
 		add(horaFinal, "gapleft 10px");
-		add(pesquisar, "gapleft 30px");
+		add(pesquisar, "gapleft 25px");
 		add(opcoesTabela, "align 100%, gapleft 30px, split 4, span");
 		add(exportarPDF, "align 100%");
 		add(exportarExcel, "align 100%");
@@ -446,14 +438,9 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		String formatInicial = df.format(dataInicial.getDate());
 		String formatFinal = df.format(dataFinal.getDate());
-		 
 		
-		
-		String timestampInicial = formatInicial+" "+  horaInicial.getSelectedItem().toString()+":00:00";
-		String timestampFinal = formatFinal +" "+ horaFinal.getSelectedItem().toString()+":00:00";
-		
-		
-		System.out.println(timestampInicial + "testeee");
+		String timestampInicial = formatInicial + " " + (horaInicial.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
+		String timestampFinal = formatFinal + " " + (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
 		
 		String formatacao = "SELECT * FROM vendas WHERE data BETWEEN ('" 
 				+ timestampInicial + "') " 

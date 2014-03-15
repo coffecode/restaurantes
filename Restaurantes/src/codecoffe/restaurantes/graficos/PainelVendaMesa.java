@@ -311,7 +311,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		tabelaPedido.getColumnModel().getColumn(5).setPreferredWidth(200);
 		tabelaPedido.getColumnModel().getColumn(6).setPreferredWidth(200);
 		tabelaPedido.getColumnModel().getColumn(7).setMinWidth(60);
-		tabelaPedido.getColumnModel().getColumn(7).setMaxWidth(65);
+		tabelaPedido.getColumnModel().getColumn(7).setMaxWidth(60);
 		tabelaPedido.setRowHeight(30);
 		tabelaPedido.getTableHeader().setReorderingAllowed(false);
 
@@ -503,15 +503,15 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		if(config.getTipoPrograma() == UtilCoffe.TIPO_MESA)
 		{
 			divisaoPainel.addTab(config.getTipoNome(), 
-					new ImageIcon(getClass().getClassLoader().getResource("imgs/mesa_mini.png")), painelProdutos1, "Gerenciar o pedido da mesa.");	
+					new ImageIcon(getClass().getClassLoader().getResource("imgs/mesa_mini.png")), painelProdutos1, "Gerenciar o pedido da mesa (ALT + W)");	
 		}
 		else
 		{
 			divisaoPainel.addTab(config.getTipoNome(), 
-					new ImageIcon(getClass().getClassLoader().getResource("imgs/comanda_24.png")), painelProdutos1, "Gerenciar o pedido da comanda.");		
+					new ImageIcon(getClass().getClassLoader().getResource("imgs/comanda_24.png")), painelProdutos1, "Gerenciar o pedido da comanda (ALT + W)");		
 		}
 				
-		divisaoPainel.addTab("Pagamento", new ImageIcon(getClass().getClassLoader().getResource("imgs/recibo_mini.png")), painelPagamento, "Pagamento do Pedido.");		
+		divisaoPainel.addTab("Pagamento", new ImageIcon(getClass().getClassLoader().getResource("imgs/recibo_mini.png")), painelPagamento, "Pagamento do Pedido (ALT + E)");		
 		add(divisaoPainel);
 
 		clienteVenda = null;		
@@ -537,18 +537,94 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 					ordem.add(adicionarProduto);
 					FocusTraversal ordemFocus = new FocusTraversal(ordem);
 					setFocusTraversalPolicy(ordemFocus);
+					
+					addProduto.requestFocus();
 				}
 				else
 				{
 					ArrayList<Component> ordem = new ArrayList<Component>();
+					ordem.add(campoForma);
+					
+					if(config.getDezPorcento())
+						ordem.add(adicionarDezPorcento);
+					
+					ordem.add(escolherCliente);
+					ordem.add(campoFuncionario);
 					ordem.add(campoRecebido);
 					ordem.add(finalizarVenda);
 					ordem.add(imprimir);
 					FocusTraversal ordemFocus = new FocusTraversal(ordem);
 					setFocusTraversalPolicy(ordemFocus);
+					
+					campoForma.requestFocus();
 				}
 			}
 		});
+		
+		ActionMap actionMap = getActionMap();
+		actionMap.put("botao1", new AtalhoAction(0));
+		actionMap.put("botao2", new AtalhoAction(1));
+		actionMap.put("botao3", new AtalhoAction(2));
+		actionMap.put("botao4", new AtalhoAction(3));
+		setActionMap(actionMap);
+		
+		InputMap imap = getInputMap(JPanel.WHEN_IN_FOCUSED_WINDOW);
+		imap.put(KeyStroke.getKeyStroke("control Q"), "botao1");
+		imap.put(KeyStroke.getKeyStroke("alt Q"), "botao1");
+		imap.put(KeyStroke.getKeyStroke("alt ENTER"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("alt A"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("control A"), "botao2");
+		imap.put(KeyStroke.getKeyStroke("alt W"), "botao3");
+		imap.put(KeyStroke.getKeyStroke("alt E"), "botao4");
+		
+		TooltipManager.addTooltip(adicionarProduto, "ALT + A", TooltipWay.up, 1000);
+		TooltipManager.addTooltip(campoQuantidade, "ALT + Q", TooltipWay.up, 1000);
+		
+		adicionarDezPorcento.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("ENTER"), "enter");
+		adicionarDezPorcento.getActionMap().put("enter", new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				adicionarDezPorcento.doClick();
+			}
+		});
+	}
+	
+	private class AtalhoAction extends AbstractAction {
+		private static final long serialVersionUID = 1L;
+		private int tipo = 0;
+		
+		public AtalhoAction(int tipo) {
+	        this.tipo = tipo;
+	    }		
+		
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+        	switch(this.tipo)
+        	{
+        		case 0:
+        		{
+        			campoQuantidade.requestFocus();
+        			break;
+        		}
+        		case 1:
+        		{
+        			adicionarProduto.doClick();
+        			break;
+        		}
+        		case 2:
+        		{
+        			divisaoPainel.setSelectedIndex(0);
+        			break;
+        		}
+        		case 3:
+        		{
+        			divisaoPainel.setSelectedIndex(1);
+        			break;
+        		}
+        	}
+        }
 	}
 
 	class DragPanel extends JPanel {
@@ -1129,16 +1205,17 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 
 									for(int i = 0; i < vendaAgora.getQuantidadeProdutos(); i++)
 									{
-										for(int x = 0; x < vendaMesa.getQuantidadeProdutos(); i++)
+										for(int x = 0; x < vendaMesa.getQuantidadeProdutos(); x++)
 										{
 											if(vendaAgora.getProduto(i).compareTo(vendaMesa.getProduto(x)))
 											{
 												vendaMesa.getProduto(x).setPagos(vendaAgora.getProduto(i).getQuantidade());
-												tabelaModel.refreshTable();
 												break;
 											}
 										}
 									}
+									
+									tabelaModel.refreshTable();
 
 									CacheMesaHeader mesaAgora			= new CacheMesaHeader(mesaID, vendaMesa, UtilCoffe.MESA_ATUALIZAR2);
 									CacheVendaFeita vendaMesaFeita		= new CacheVendaFeita(vendaAgora, vendaMesa, mesaAgora);
@@ -1443,6 +1520,17 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			atualizarCampoRecibo();
 		}
 	}
+	
+	public void setFuncionarioSelected(String nome)
+	{
+		for(int i = 0; i < campoFuncionario.getItemCount(); i++)
+		{
+			if(campoFuncionario.getItemAt(i).toString().equals(nome)) {
+				campoFuncionario.setSelectedIndex(i);
+				break;
+			}
+		}
+	}
 
 	@Override
 	public void itemStateChanged(ItemEvent e) {
@@ -1737,28 +1825,31 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				if(aviso.getTipo() == 1)
+				if(aviso != null)
 				{
-					if(!config.getReciboFim())
-						JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.INFORMATION_MESSAGE);
+					if(aviso.getTipo() == 1)
+					{
+						if(!config.getReciboFim())
+							JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.INFORMATION_MESSAGE);
+						else
+						{
+							int opcao = JOptionPane.showConfirmDialog(null, aviso.getMensagem() 
+									+ "\n\nDeseja imprimir o recibo?", "Venda #" + aviso.getTitulo(), JOptionPane.YES_NO_OPTION);
+							if(opcao == JOptionPane.YES_OPTION)
+							{
+								criarRecibo();
+							}			
+						}		
+
+						setMesa(mesaID, vendaMesa);
+						mesaListener.atualizarMesa(mesaID);
+						termina(false);					
+					}
 					else
 					{
-						int opcao = JOptionPane.showConfirmDialog(null, aviso.getMensagem() 
-									+ "\n\nDeseja imprimir o recibo?", "Venda #" + aviso.getTitulo(), JOptionPane.YES_NO_OPTION);
-						if(opcao == JOptionPane.YES_OPTION)
-						{
-							criarRecibo();
-						}			
-					}		
-					
-					setMesa(mesaID, vendaMesa);
-					mesaListener.atualizarMesa(mesaID);
-					termina(false);					
+						JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.ERROR_MESSAGE);
+					}				
 				}
-				else
-				{
-					JOptionPane.showMessageDialog(null, aviso.getMensagem(), aviso.getTitulo(), JOptionPane.ERROR_MESSAGE);
-				}				
 			}
 		});
 	}
@@ -1832,6 +1923,24 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 						}
 					}
 				}
+				
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						if(addProduto.getProdutoSelecionado() != null)
+							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
+						else
+							campoValor.setText("");
+						campoQuantidade.setText("1");
+						campoComentario.setText("");
+						addAdicional.clear();
+						addRemover.clear();
+						adicionaisPainel.removeAll();
+						adicionaisPainel.revalidate();
+						adicionaisPainel.repaint();
+						addProduto.requestFocus();
+					}
+				});
 			}
 			else if(operacao == UtilCoffe.INTERFACE_MESA_ADD_TABELA)
 			{

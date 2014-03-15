@@ -31,15 +31,11 @@ public class FramePrincipal extends JFrame implements MenuSelecionado, LegendaAl
 	private Object modoPrograma;
 	private Login login;
 	
-	//private AtualizarPainel listenerTeste;
-	
 	public FramePrincipal(String titulo, Configuracao cfg, Object modo, AtualizarPainel listener)
 	{
 		super(titulo);
 		config = cfg;
 		modoPrograma = modo;
-		
-		//listenerTeste = listener;
 		
 		setResizable(true);
 		setIconImage(new ImageIcon(getClass().getClassLoader().getResource("imgs/icone_programa.png")).getImage());
@@ -101,6 +97,9 @@ public class FramePrincipal extends JFrame implements MenuSelecionado, LegendaAl
 		
 		if(login != null)
 			login.dispose();
+		
+		((PainelVendaMesa) componentesCentrais.getComponent((componentesCentrais.getComponentCount()-1))).setFuncionarioSelected(nome);
+		((PainelVendaRapida) componentesCentrais.getComponent((componentesCentrais.getComponentCount()-2))).setFuncionarioSelected(nome);			
 	}
 	
 	public void adicionarPainel(JPanel painel, String titulo) {
@@ -115,24 +114,6 @@ public class FramePrincipal extends JFrame implements MenuSelecionado, LegendaAl
 	public void abrirMenu(String text) {
 		CardLayout cardLayout = (CardLayout) componentesCentrais.getLayout();
 		cardLayout.show(componentesCentrais, text);
-		
-		/*if((text).contains("Vendas"))
-		{
-			System.out.println("Thread 1 iniciada!");
-			
-			new Thread(new Runnable() {
-				public void run()
-				{
-					while(true)
-					{
-						ThreadUtils.sleepSafely(2000);
-						System.out.println("Enviando pedido (1)!");
-						Pedido ped = new Pedido(new ProdutoVenda("Produto Teste", 2.00, 666, 0), "Teste", 11);
-						listenerTeste.atualizarPainel(ped);
-					}
-				}
-			}).start();
-		}*/
 	}
 
 	@Override
