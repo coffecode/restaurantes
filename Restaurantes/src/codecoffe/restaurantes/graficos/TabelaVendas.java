@@ -183,10 +183,14 @@ public class TabelaVendas extends WebPanel implements ActionListener
 								"08h00", "09h00", "10h00", "11h00", "12h00", "13h00", "14h00","15h00", 
 								"16h00", "17h00", "18h00", "19h00", "20h00", "21h00", "22h00", "23h00"};
 		
+		String[] tiposHoraFim = {"00h59", "01h59", "02h59", "03h59", "04h59", "05h59", "06h59", "07h59", 
+				"08h59", "09h59", "10h59", "11h59", "12h59", "13h59", "14h59","15h59", 
+				"16h59", "17h59", "18h59", "19h59", "20h59", "21h59", "22h59", "23h59"};
+		
 		horaInicial = new JComboBox<>(tiposHora);
 		horaInicial.setMinimumSize(new Dimension(75, 35));
 
-		horaFinal = new JComboBox<>(tiposHora);
+		horaFinal = new JComboBox<>(tiposHoraFim);
 		horaFinal.setMinimumSize(new Dimension(75, 35));
 		horaFinal.setSelectedIndex((horaFinal.getItemCount()-1));
 		
@@ -440,7 +444,7 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		String formatFinal = df.format(dataFinal.getDate());
 		
 		String horaInicio = (horaInicial.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
-		String horaFim = (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":00:00";
+		String horaFim = (horaFinal.getSelectedItem().toString().replaceAll("h00", "")) + ":59:59";
 		
 		String formatacao = "SELECT * FROM vendas WHERE data BETWEEN ('" 
 				+ formatInicial + "') " 
