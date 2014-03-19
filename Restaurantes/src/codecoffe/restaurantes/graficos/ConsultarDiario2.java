@@ -2,14 +2,17 @@ package codecoffe.restaurantes.graficos;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,7 +26,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -35,12 +37,15 @@ import javax.swing.table.DefaultTableModel;
 
 import net.miginfocom.swing.MigLayout;
 import codecoffe.restaurantes.mysql.Query;
+import codecoffe.restaurantes.utilitarios.JSystemFileChooser;
 import codecoffe.restaurantes.utilitarios.Usuario;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
 import com.alee.extended.date.WebDateField;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.progressbar.WebProgressBar;
+import com.alee.laf.progressbar.WebProgressBarStyle;
 import com.alee.laf.scroll.WebScrollPane;
 import com.itextpdf.text.Anchor;
 import com.itextpdf.text.Chapter;
@@ -67,8 +72,8 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 	private Timer t;
 	private Query pega3;
 	private int index, totalLinhas;
-	private JProgressBar progressBar;
-	private JFileChooser chooser;
+	private WebProgressBar progressBar;
+	private JSystemFileChooser chooser;
 	private String nomeArquivo, dataDia;
 	private JLabel labelProgresso;
 
@@ -208,7 +213,25 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 		}
 		else if(e.getSource() == exportarPDF)
 		{
-			exportarPDF();
+			try {
+				SimpleDateFormat formataDataSQL = new SimpleDateFormat("yyyy-M-dd");	
+				String consulta = "SELECT * FROM diario WHERE data BETWEEN ('" 
+						+ formataDataSQL.format(dataInicial.getDate()) + "') " 
+						+ "AND ('" + formataDataSQL.format(dataFinal.getDate()) + "')";
+				
+				Query verifica = new Query();
+				verifica.executaQuery(consulta);
+				int qntd = verifica.getRowCount();
+				verifica.fechaConexao();
+				
+				if(qntd > 0)
+					exportarPDF();
+				else
+					JOptionPane.showMessageDialog(this, "Nenhuma ação nesse intervalo de tempo!");
+			} catch (ClassNotFoundException | SQLException e1) {
+				e1.printStackTrace();
+				new PainelErro(e1);
+			}
 		}
 	}
 
@@ -260,9 +283,6 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 
 	private class TabelaVendasRenderer extends DefaultTableCellRenderer
 	{
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 		private Color alternate = new Color(206, 220, 249);
 
@@ -297,11 +317,11 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 		nomeArquivo = "/Diario_" + formataDataSQL.format(dataInicial.getDate()) + "__" + 
 				formataDataSQL.format(dataFinal.getDate()) + ".pdf";
 
-		chooser = new JFileChooser(); 
+		chooser = new JSystemFileChooser(); 
 		chooser.setCurrentDirectory(new java.io.File("."));
 		chooser.setDialogTitle("Selecione a pasta para salvar");
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		chooser.setAcceptAllFileFilterUsed(false);	    
+		chooser.setAcceptAllFileFilterUsed(false);
 
 		if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
 		{
@@ -351,6 +371,7 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 
 			JFrame salvando = new JFrame();
 			salvando.setTitle("Exportando Diário para PDF");
+			salvando.setIconImage(new ImageIcon(getClass().getClassLoader().getResource("imgs/icone_programa.png")).getImage());
 			salvando.setSize(436, 186);
 			salvando.setLayout(null);
 			salvando.setLocationRelativeTo(null);
@@ -362,7 +383,10 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 			labelProgresso.setHorizontalTextPosition(AbstractButton.LEFT);
 			labelProgresso.setBounds(15, 10, 480, 40);				    	
 
-			progressBar = new JProgressBar(0, totalLinhas);
+	    	WebProgressBarStyle.progressTopColor = new Color(152, 10, 10);
+	    	WebProgressBarStyle.progressBottomColor = new Color(186, 25, 25);
+			
+			progressBar = new WebProgressBar(0, totalLinhas);
 			progressBar.setValue(0);
 			progressBar.setStringPainted(true);
 			progressBar.setBounds(15, 51, 400, 50); // Coluna, Linha, Largura, Altura
@@ -371,6 +395,7 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 			campoSalvando.setFont(new Font("Verdana", Font.PLAIN, 10));
 			campoSalvando.setEditable(false);
 			campoSalvando.setText(chooser.getCurrentDirectory() + "/" + chooser.getSelectedFile().getName() + nomeArquivo);
+			campoSalvando.setText(campoSalvando.getText().replaceAll("\\\\", "/"));
 			campoSalvando.setBounds(15, 110, 400, 30);
 
 			salvando.add(campoSalvando);
@@ -461,6 +486,12 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 					{
 						pega3.fechaConexao();
 						document.close();
+						Desktop dt = Desktop.getDesktop();
+						try {
+							dt.open(new File(chooser.getCurrentDirectory() + "/" + chooser.getSelectedFile().getName() + nomeArquivo));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 						SwingUtilities.invokeLater(new Runnable() {  
 							public void run() {
 								labelProgresso.setText("Finalizado.");

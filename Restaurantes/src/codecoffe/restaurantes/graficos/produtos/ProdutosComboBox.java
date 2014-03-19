@@ -136,6 +136,11 @@ public class ProdutosComboBox extends JComboBox<Object> implements KeyListener
 		return (Produto) comboEditor.getItem();
 	}
 	
+	public void setProdutoNull() 
+	{
+		comboEditor.setProdutoNull();
+	}
+	
 	public ProdutosComboModel getModelPossivel(String texto)
 	{
 		String comparar = UtilCoffe.removeAcentos(texto.toLowerCase());

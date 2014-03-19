@@ -98,8 +98,15 @@ public class ExportarVendasPDF implements Runnable
 	    	WebProgressBarStyle.progressTopColor = new Color(152, 10, 10);
 	    	WebProgressBarStyle.progressBottomColor = new Color(186, 25, 25);
 	    	
-	    	progressBar = new WebProgressBar(0, totalLinhas);
-	    	progressBar.setValue(0);
+	    	if(totalLinhas > 0) {
+	    		progressBar = new WebProgressBar(0, totalLinhas);
+	    		progressBar.setValue(0);
+	    	}
+	    	else {
+	    		progressBar = new WebProgressBar(0, 1);
+	    		progressBar.setValue(1);
+	    	}
+	    		
 	    	progressBar.setStringPainted(true);
 	    	progressBar.setBounds(15, 51, 400, 50); // Coluna, Linha, Largura, Altura
 	    	
@@ -352,9 +359,9 @@ public class ExportarVendasPDF implements Runnable
 		    
 		    com.itextpdf.text.List overview = new com.itextpdf.text.List(false, 10);
 		    overview.add(new ListItem(totalLinhas + " vendas no total."));
-		    overview.add(vendas_fiadas + " (" + ((100*vendas_fiadas)/totalLinhas) + "%) vendas fiadas.");
-		    overview.add(vendas_dezporcento + " (" + ((100*vendas_dezporcento)/totalLinhas) + "%) vendas com 10% opcional.");
-		    overview.add(vendas_delivery + " (" + ((100*vendas_delivery)/totalLinhas) + "%) vendas de delivery.");
+		    overview.add(vendas_fiadas + " (" + ((100*vendas_fiadas)/(totalLinhas > 0 ? totalLinhas : 1)) + "%) vendas fiadas.");
+		    overview.add(vendas_dezporcento + " (" + ((100*vendas_dezporcento)/(totalLinhas > 0 ? totalLinhas : 1)) + "%) vendas com 10% opcional.");
+		    overview.add(vendas_delivery + " (" + ((100*vendas_delivery)/(totalLinhas > 0 ? totalLinhas : 1)) + "%) vendas de delivery.");
 		    
 		    escrever.add(overview);
 		    document.add(escrever);
@@ -399,7 +406,7 @@ public class ExportarVendasPDF implements Runnable
 		    	c1.setHorizontalAlignment(Element.ALIGN_CENTER);
 			    table.addCell(c1);			    
 			    
-		    	c1 = new PdfPCell(new Paragraph(funcionarios.get(i).getTotalVendas() + " (" + ((100*funcionarios.get(i).getTotalVendas())/totalLinhas) + "%)", fontVenda));
+		    	c1 = new PdfPCell(new Paragraph(funcionarios.get(i).getTotalVendas() + " (" + ((100*funcionarios.get(i).getTotalVendas())/(totalLinhas > 0 ? totalLinhas : 1)) + "%)", fontVenda));
 		    	c1.setPadding(5);
 		    	c1.setHorizontalAlignment(Element.ALIGN_CENTER);
 			    table.addCell(c1);
@@ -409,7 +416,7 @@ public class ExportarVendasPDF implements Runnable
 		    	c1.setHorizontalAlignment(Element.ALIGN_CENTER);
 			    table.addCell(c1);
 			    
-			    dataSet.setValue(funcionarios.get(i).getNome(), ((double) (100*funcionarios.get(i).getTotalVendas())/(double) totalLinhas));
+			    dataSet.setValue(funcionarios.get(i).getNome(), ((double) (100*funcionarios.get(i).getTotalVendas())/(double) (totalLinhas > 0 ? totalLinhas : 1)));
 		    }
 		    
 		    escrever.add(table);
@@ -485,6 +492,7 @@ public class ExportarVendasPDF implements Runnable
 			SimpleDateFormat formataDataTabela = new SimpleDateFormat("dd/MM/yyyy");
 			
 			double totalGastos = 0.0;
+			double totalApenasGastos = 0.0;
 		    
 		    while(pega.next())
 		    {
@@ -523,6 +531,7 @@ public class ExportarVendasPDF implements Runnable
 			    if(UtilCoffe.precoToDouble(pega.getString("valor")) < 0)
 			    {
 			    	cc4 = new PdfPCell(new Paragraph(pega.getString("valor"), fontVendaRed));
+			    	totalApenasGastos += UtilCoffe.precoToDouble(pega.getString("valor"));
 			    }
 			    else
 			    {
@@ -542,29 +551,30 @@ public class ExportarVendasPDF implements Runnable
 		    document.add(escrever);
 		    
 		    escrever = new Paragraph();
+		    escrever.add(new Paragraph("Total de Gastos: R$" + UtilCoffe.doubleToPreco(totalApenasGastos), fontTextoBoldRed));
 		    
 		    if(totalGastos < 0)
-		    	escrever.add(new Paragraph("Total Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldRed));
+		    	escrever.add(new Paragraph("Total em Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldRed));
 		    else
-		    	escrever.add(new Paragraph("Total Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldBlue));
+		    	escrever.add(new Paragraph("Total em Anotações: R$" + UtilCoffe.doubleToPreco(totalGastos), fontTextoBoldBlue));
 		    
 		    addEmptyLine(escrever, 1);
 		    
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodo) + " (c/ 10% opcional)", fontTexto));
 		    
-		    if(totalPeriodo-totalGastos < 0)
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo+totalGastos), fontTextoBoldRed));
-		    else
+		    if((totalPeriodo-totalGastos) < 0)
 		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo+totalGastos), fontTextoBoldBlue));
+		    else
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodo+totalGastos), fontTextoBoldRed));
 		    
 		    addEmptyLine(escrever, 1);
 		    
 		    escrever.add(new Paragraph("Total em Vendas: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus) + " (s/ 10% opcional)", fontTexto));
 		    
-		    if(totalPeriodoSemBonus-totalGastos < 0)
-		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus+totalGastos), fontTextoBoldRed));
-		    else
+		    if((totalPeriodoSemBonus-totalGastos) < 0)
 		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus+totalGastos), fontTextoBoldBlue));
+		    else
+		    	escrever.add(new Paragraph("Lucro: R$" + UtilCoffe.doubleToPreco(totalPeriodoSemBonus+totalGastos), fontTextoBoldRed));
 		    
 		    document.add(escrever);
 		    document.newPage();

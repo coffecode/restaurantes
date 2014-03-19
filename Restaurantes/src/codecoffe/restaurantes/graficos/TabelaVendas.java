@@ -3,6 +3,7 @@ package codecoffe.restaurantes.graficos;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -414,18 +415,36 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		}
 		else if(e.getSource() == exportarExcel)
 		{
-			JSystemFileChooser chooser = new JSystemFileChooser(); 
-		    chooser.setCurrentDirectory(new java.io.File("."));
-		    chooser.setDialogTitle("Selecione a pasta para salvar");
-		    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		    chooser.setAcceptAllFileFilterUsed(false);		    
-		    
-		    if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
-		    {
-		    	ExportarVendasExcel exportar = new ExportarVendasExcel(dataInicial.getDate(), 
-		    									dataFinal.getDate(), chooser, gerarPesquisa());
-		    	new Thread(exportar).start();
-		    }
+			try {
+				int qtd = 0;				
+				Query verifica = new Query();
+				verifica.executaQuery(gerarPesquisa());
+				qtd = verifica.getRowCount();
+				verifica.fechaConexao();
+				
+				if(qtd > 0)
+				{
+					JSystemFileChooser chooser = new JSystemFileChooser(); 
+				    chooser.setCurrentDirectory(new java.io.File("."));
+				    chooser.setDialogTitle("Selecione a pasta para salvar");
+				    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				    chooser.setAcceptAllFileFilterUsed(false);		    
+				    
+				    if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+				    {
+				    	ExportarVendasExcel exportar = new ExportarVendasExcel(dataInicial.getDate(), 
+				    									dataFinal.getDate(), chooser, gerarPesquisa());
+				    	new Thread(exportar).start();
+				    }
+				}
+				else
+				{
+					JOptionPane.showMessageDialog(this, "Nenhuma venda nesse intervalo de tempo!");
+				}
+			} catch (HeadlessException | ClassNotFoundException | SQLException e1) {
+				e1.printStackTrace();
+				new PainelErro(e1);
+			}
 		}
 		else if(e.getSource() == verGraficoTotal)
 		{

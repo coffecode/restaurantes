@@ -41,6 +41,12 @@ public class ProdutosComboEditor implements ComboBoxEditor
 			editorPane.setSelecionado(p);
 		}
 	}
+	
+	public void setProdutoNull()
+	{
+		produtoSelecionado = null;
+		editorPane.setSelecionadoNull();
+	}
 
 	@Override
 	public Object getItem() {
@@ -84,7 +90,7 @@ public class ProdutosComboEditor implements ComboBoxEditor
 			
 			painelProduto = new JPanel(new MigLayout());
 			
-			labelNome = new JLabel("Produto: -");
+			labelNome = new JLabel("Nenhum");
 			if(comboAdicional)
 				labelNome.setIcon(new ImageIcon(getClass().getClassLoader().getResource("imgs/plus2.png")));
 			else
@@ -111,6 +117,12 @@ public class ProdutosComboEditor implements ComboBoxEditor
 		{
 			labelNome.setText(" " + p.getNome());
 			labelCodigo.setText("Código: " + p.getCodigo());
+		}
+		
+		public void setSelecionadoNull()
+		{
+			labelNome.setText("Nenhum");
+			labelCodigo.setText("Código: -");
 		}
 		
 		@Override

@@ -1447,10 +1447,14 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				tabelaModel.refreshTable();
 				adicionarDezPorcento.setSelected(false);
 				
-				if(addProduto.getProdutoSelecionado() != null)
+				/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
+				addProduto.setProdutoNull();
+				campoValor.setText("");
+				
+				/*if(addProduto.getProdutoSelecionado() != null)
 					campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 				else
-					campoValor.setText("");
+					campoValor.setText("");*/
 					
 				campoQuantidade.setText("1");
 				campoTotal.setText("0,00");

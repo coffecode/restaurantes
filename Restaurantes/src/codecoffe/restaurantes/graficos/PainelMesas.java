@@ -187,10 +187,6 @@ public class PainelMesas extends JPanel implements ActionListener
 		}
 	}
 	
-	/*public synchronized void setMesa(int id, Venda v) {
-		vendaMesas.set(id, v);
-	}*/
-	
 	public Venda getMesa(int id) {
 		return vendaMesas.get(id);
 	}
