@@ -993,11 +993,11 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 			
 			if(addProduto.getProdutoSelecionado() == null)
 			{
-				JOptionPane.showMessageDialog(null, "Você precisa selecionar um produto antes!");
+				JOptionPane.showMessageDialog(this, "Você precisa selecionar um produto antes!");
 			}
 			else if(campoComentario.getText().length() > 100)
 			{
-				JOptionPane.showMessageDialog(null, "Campo comentário pode ter no máximo 100 caracteres!");
+				JOptionPane.showMessageDialog(this, "Campo comentário pode ter no máximo 100 caracteres!");
 			}
 			else
 			{
@@ -1046,10 +1046,14 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));
 						}
 						
-						if(addProduto.getProdutoSelecionado() != null)
+						/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
+						addProduto.setProdutoNull();
+						campoValor.setText("");
+						
+						/*if(addProduto.getProdutoSelecionado() != null)
 							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 						else
-							campoValor.setText("");
+							campoValor.setText("");*/
 						campoQuantidade.setText("1");
 						campoComentario.setText("");
 						addAdicional.clear();
