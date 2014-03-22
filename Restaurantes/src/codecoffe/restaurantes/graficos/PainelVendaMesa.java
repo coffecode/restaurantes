@@ -1446,15 +1446,12 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 			public void run() {
 				tabelaModel.refreshTable();
 				adicionarDezPorcento.setSelected(false);
+				addProduto.getEditorBox().setText("");
 				
-				/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
-				addProduto.setProdutoNull();
-				campoValor.setText("");
-				
-				/*if(addProduto.getProdutoSelecionado() != null)
+				if(addProduto.getProdutoSelecionado() != null)
 					campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 				else
-					campoValor.setText("");*/
+					campoValor.setText("");
 					
 				campoQuantidade.setText("1");
 				campoTotal.setText("0,00");
@@ -1744,7 +1741,7 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 					+ " AND `produto` = " + v.getVendaFeita().getProduto(i).getIdUnico() + " AND `adicionais` = '" + v.getVendaFeita().getProduto(i).getAllAdicionaisId() + "';";
 					envia.executaUpdate(formatacao);
 					
-					pegaPreco = String.format("%.2f", (v.getVendaFeita().getProduto(i).getPreco() * v.getVendaFeita().getProduto(i).getQuantidade()));
+					pegaPreco = String.format("%.2f", v.getVendaFeita().getProduto(i).getTotalProduto2());
 					pegaPreco.replaceAll(",", ".");						
 					
 					formatacao = "INSERT INTO vendas_produtos(id_link, nome_produto, adicionais_produto, preco_produto, quantidade_produto, dia, mes, ano, data) VALUES('"
@@ -1931,14 +1928,13 @@ public class PainelVendaMesa extends JPanel implements ActionListener, FocusList
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
-						addProduto.setProdutoNull();
-						campoValor.setText("");
+						addProduto.getEditorBox().setText("");
 						
-						/*if(addProduto.getProdutoSelecionado() != null)
+						if(addProduto.getProdutoSelecionado() != null)
 							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 						else
-							campoValor.setText("");*/
+							campoValor.setText("");
+							
 						campoQuantidade.setText("1");
 						campoComentario.setText("");
 						addAdicional.clear();

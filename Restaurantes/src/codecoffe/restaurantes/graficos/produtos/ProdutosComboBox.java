@@ -131,14 +131,14 @@ public class ProdutosComboBox extends JComboBox<Object> implements KeyListener
 		return comboEditor.getTextField();
 	}
 	
+	public ProdutosComboEditor getEditorBox()
+	{
+		return comboEditor;
+	}
+	
 	public Produto getProdutoSelecionado()
 	{
 		return (Produto) comboEditor.getItem();
-	}
-	
-	public void setProdutoNull() 
-	{
-		comboEditor.setProdutoNull();
 	}
 	
 	public ProdutosComboModel getModelPossivel(String texto)

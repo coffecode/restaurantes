@@ -13,14 +13,14 @@ public class buscaCEP {
 
 		//***************************************************
 		try{
-
 			Document doc = Jsoup.connect("http://www.qualocep.com/busca-cep/"+CEP)
 					.timeout(120000)
 					.get();
 			Elements urlPesquisa = doc.select("span[itemprop=streetAddress]");
 			for (Element urlEndereco : urlPesquisa) {
-				byte[] iso88591Data = urlEndereco.text().getBytes("ISO-8859-1");
-				return new String(iso88591Data, "UTF-8");
+				return urlEndereco.text();
+				//byte[] iso88591Data = urlEndereco.text().getBytes("ISO-8859-1");
+				//return new String(iso88591Data, "UTF-8");
 			}
 
 		} catch (SocketTimeoutException e) {
@@ -36,14 +36,14 @@ public class buscaCEP {
 
 		//***************************************************
 		try{
-
 			Document doc = Jsoup.connect("http://www.qualocep.com/busca-cep/"+CEP)
 					.timeout(120000)
 					.get();
 			Elements urlPesquisa = doc.select("td:gt(1)");
 			for (Element urlBairro : urlPesquisa) {
-				byte[] iso88591Data = urlBairro.text().getBytes("ISO-8859-1");
-				return new String(iso88591Data, "UTF-8");
+				return urlBairro.text();
+				//byte[] iso88591Data = urlBairro.text().getBytes("ISO-8859-1");
+				//return new String(iso88591Data, "UTF-8");
 			}
 
 		} catch (SocketTimeoutException e) {

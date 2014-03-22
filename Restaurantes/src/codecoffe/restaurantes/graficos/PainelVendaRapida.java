@@ -1046,14 +1046,12 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 							campoTotal.setText(UtilCoffe.doubleToPreco((vendaRapidaNova.getTotal() + taxaEntrega)));
 						}
 						
-						/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
-						addProduto.setProdutoNull();
-						campoValor.setText("");
+						addProduto.getEditorBox().setText("");
 						
-						/*if(addProduto.getProdutoSelecionado() != null)
+						if(addProduto.getProdutoSelecionado() != null)
 							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 						else
-							campoValor.setText("");*/
+							campoValor.setText("");
 						campoQuantidade.setText("1");
 						campoComentario.setText("");
 						addAdicional.clear();
@@ -1422,15 +1420,13 @@ public class PainelVendaRapida extends JPanel implements ActionListener, FocusLi
 						tabelaModel.refreshTable();
 						campoEntrega.setSelected(false);
 						adicionarDezPorcento.setSelected(false);
+						addProduto.getEditorBox().setText("");
 						
-						/* pedido do cliente betos bar, se quiser comenta essas 2 e descomenta as outras */
-						addProduto.setProdutoNull();
-						campoValor.setText("");
-						
-						/*if(addProduto.getProdutoSelecionado() != null)
+						if(addProduto.getProdutoSelecionado() != null)
 							campoValor.setText(UtilCoffe.doubleToPreco(addProduto.getProdutoSelecionado().getPreco()));
 						else
-							campoValor.setText("");*/
+							campoValor.setText("");
+						
 						campoQuantidade.setText("1");
 						campoTotal.setText("0,00");
 						campoRecebido.setText("");

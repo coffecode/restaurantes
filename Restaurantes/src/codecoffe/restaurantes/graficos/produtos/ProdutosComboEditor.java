@@ -41,12 +41,6 @@ public class ProdutosComboEditor implements ComboBoxEditor
 			editorPane.setSelecionado(p);
 		}
 	}
-	
-	public void setProdutoNull()
-	{
-		produtoSelecionado = null;
-		editorPane.setSelecionadoNull();
-	}
 
 	@Override
 	public Object getItem() {
@@ -70,6 +64,10 @@ public class ProdutosComboEditor implements ComboBoxEditor
 	
 	public WebTextField getTextField() {
 		return editorPane.getTextField();
+	}
+	
+	public void setText(String text) {
+		editorPane.setText(text);
 	}
 	
 	class EditorPane extends JPanel
@@ -117,12 +115,6 @@ public class ProdutosComboEditor implements ComboBoxEditor
 		{
 			labelNome.setText(" " + p.getNome());
 			labelCodigo.setText("Código: " + p.getCodigo());
-		}
-		
-		public void setSelecionadoNull()
-		{
-			labelNome.setText("Nenhum");
-			labelCodigo.setText("Código: -");
 		}
 		
 		@Override

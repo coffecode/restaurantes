@@ -88,7 +88,7 @@ public class PainelMesas extends JPanel implements ActionListener
 		
 		for(int i = 0; i < vendaMesas.size(); i++)
 		{	
-			BotaoMesa mesa = new BotaoMesa(config.getTipoNome() + " " + (i+1), vendaMesas.get(i), i);
+			BotaoMesa mesa = new BotaoMesa(config.getTipoNome() + " " + (i+1), i);
 			mesa.setFont(new Font("Verdana", Font.PLAIN, 12));
 			mesa.setPreferredSize(new Dimension(100, 60));
 			mesa.setHorizontalTextPosition(AbstractButton.CENTER);
@@ -155,9 +155,9 @@ public class PainelMesas extends JPanel implements ActionListener
 		@Override
 		public void mouseEntered(MouseEvent e) {
 			BotaoMesa x = (BotaoMesa)e.getSource();
-			x.getVenda().calculaTotal();
+			getMesa(x.id).calculaTotal();
 			painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_LEGENDA, "Total na conta: R$" 
-							+ UtilCoffe.doubleToPreco(x.getVenda().getTotal())));
+							+ UtilCoffe.doubleToPreco(getMesa(x.id).getTotal())));
 		}
 
 		@Override
@@ -170,17 +170,11 @@ public class PainelMesas extends JPanel implements ActionListener
 	{
 		private static final long serialVersionUID = 1L;
 		private int id;
-		private Venda venda;
 		
-	    public BotaoMesa(String txt, Venda v, int id) {
+	    public BotaoMesa(String txt, int id) {
 	        super(txt);
-	        this.venda = v;
 	        this.id = id;
 	    }
-
-		public Venda getVenda() {
-			return this.venda;
-		}
 
 		public int getId() {
 			return id;
