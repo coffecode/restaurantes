@@ -79,6 +79,15 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 
 	public ConsultarDiario2()
 	{
+		try {
+			// deletar registros antigos p/ não pesar o bd
+			Query deleta = new Query();
+			deleta.executaUpdate("DELETE FROM diario WHERE data < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+			deleta.fechaConexao();
+		} catch (ClassNotFoundException | SQLException e1) {
+			e1.printStackTrace();
+		}
+		
 		catFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 18, com.itextpdf.text.Font.BOLD);
 		paFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 16, com.itextpdf.text.Font.BOLD);
 		subFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10, com.itextpdf.text.Font.NORMAL);	
@@ -87,9 +96,6 @@ public class ConsultarDiario2 extends WebPanel implements ActionListener
 
 		tabela = new JTable();
 		tabelaModel = new DefaultTableModel() {
-			/**
-			 * 
-			 */
 			private static final long serialVersionUID = 1L;
 			@Override
 			public boolean isCellEditable(int row, int column) {
