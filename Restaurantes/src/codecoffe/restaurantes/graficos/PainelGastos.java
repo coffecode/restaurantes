@@ -33,8 +33,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import net.miginfocom.swing.MigLayout;
+import codecoffe.restaurantes.eventos.AtualizarPainel;
 import codecoffe.restaurantes.mysql.Query;
 import codecoffe.restaurantes.utilitarios.DiarioLog;
+import codecoffe.restaurantes.utilitarios.Header;
 import codecoffe.restaurantes.utilitarios.Usuario;
 import codecoffe.restaurantes.utilitarios.UtilCoffe;
 import codecoffe.restaurantes.utilitarios.GraficoGastos;
@@ -62,9 +64,11 @@ public class PainelGastos extends WebPanel implements ActionListener
 	private WebTextField campoNome, campoDescricao, campoValor;
 	private JLabel labelGasto;
 	private double gastoTotal;
+	private AtualizarPainel painelListener;
 
-	public PainelGastos()
+	public PainelGastos(AtualizarPainel listener)
 	{
+		painelListener = listener;
 		setLayout(new MigLayout("fill", "15[]15[]20[]15", "10[]10[]"));
 		gastoTotal = 0;
 
@@ -491,7 +495,12 @@ public class PainelGastos extends WebPanel implements ActionListener
 					if(opcao == JOptionPane.YES_OPTION)
 					{ 
 						try {
+							int salvaVenda = 0;
 							Query pega = new Query();
+							pega.executaQuery("SELECT venda_fiado FROM gastos WHERE `id` = " + tabela.getValueAt(tabela.getSelectedRow(), 0));
+							if(pega.next())
+								salvaVenda = pega.getInt("venda_fiado");
+							
 							pega.executaUpdate("DELETE FROM gastos WHERE `id` = " + tabela.getValueAt(tabela.getSelectedRow(), 0));
 							gastoTotal -= UtilCoffe.precoToDouble(tabela.getValueAt(tabela.getSelectedRow(), 4).toString());
 							DiarioLog.add(Usuario.INSTANCE.getNome(), "Deletou a anotação " + tabela.getValueAt(tabela.getSelectedRow(), 2) 
@@ -503,6 +512,11 @@ public class PainelGastos extends WebPanel implements ActionListener
 									tabelaModel.removeRow(tabela.getSelectedRow());
 								}  
 							});
+							
+							if(salvaVenda > 0) {
+								painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_VENDAS));
+								painelListener.atualizarPainel(new Header(UtilCoffe.UPDATE_FIADOS));
+							}
 
 							NotificationManager.setLocation(2);
 							NotificationManager.showNotification(tabela, "Anotação Deletada!", 

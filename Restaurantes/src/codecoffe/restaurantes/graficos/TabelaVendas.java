@@ -510,12 +510,14 @@ public class TabelaVendas extends WebPanel implements ActionListener
 		if(filtroCampoStatus.getSelectedIndex() > 0)
 		{
 			if(filtroCampoStatus.getSelectedIndex() == 1) {
-				formatacao += "AND CAST(REPLACE(valor_pago, ',', '.') AS DECIMAL(10,6)) >= CAST(REPLACE(total, ',', '.') AS DECIMAL(10,6)) ";
-				formatacao += "AND forma_pagamento LIKE 'Fiado' ";
+				formatacao += "AND CAST(REPLACE(valor_pago, ',', '.') AS DECIMAL(10,6)) + (SELECT IFNULL(SUM(CAST(REPLACE(valor, ',', '.') AS DECIMAL(10,6))),0) "
+																								+ "FROM gastos WHERE venda_fiado = vendas.vendas_id) ";
+				formatacao += ">= CAST(REPLACE(total, ',', '.') AS DECIMAL(10,6)) ";
 			}
 			else {
-				formatacao += "AND CAST(REPLACE(valor_pago, ',', '.') AS DECIMAL(10,6)) < CAST(REPLACE(total, ',', '.') AS DECIMAL(10,6)) ";
-				formatacao += "AND forma_pagamento LIKE 'Fiado' ";
+				formatacao += "AND CAST(REPLACE(valor_pago, ',', '.') AS DECIMAL(10,6)) + (SELECT IFNULL(SUM(CAST(REPLACE(valor, ',', '.') AS DECIMAL(10,6))),0) "
+																								+ "FROM gastos WHERE venda_fiado = vendas.vendas_id) ";
+				formatacao += "< CAST(REPLACE(total, ',', '.') AS DECIMAL(10,6)) ";
 			}
 		}
 		
@@ -567,9 +569,19 @@ public class TabelaVendas extends WebPanel implements ActionListener
 				linha.add(pega.getString("forma_pagamento"));
 				linha.add(pega.getString("total"));
 					
-				if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
+				if(pega.getString("forma_pagamento").equals("Fiado"))
 				{
-					if(pega.getString("forma_pagamento").equals("Fiado")) {
+					double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+					Query verifica = new Query();
+					verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+					while(verifica.next()) {
+						totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+					}
+					verifica.fechaConexao();									
+					
+					totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda;					
+					
+					if(totalPagoVenda > 0) {
 						linha.add("0");
 					}
 					else

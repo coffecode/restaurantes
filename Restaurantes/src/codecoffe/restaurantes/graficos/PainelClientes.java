@@ -639,12 +639,21 @@ public class PainelClientes extends JPanel implements ActionListener
 						linha.add(pega2.getString("horario"));
 						linha.add(pega2.getString("total"));
 						
-						if((Double.parseDouble(pega2.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega2.getString("valor_pago").replaceAll(",", "."))))
+						if(pega2.getString("forma_pagamento").equals("Fiado"))
 						{
-							if(pega2.getString("forma_pagamento").equals("Fiado"))
+							double totalPagoVenda = UtilCoffe.precoToDouble(pega2.getString("valor_pago"));
+							Query verifica = new Query();
+							verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega2.getInt("vendas_id"));
+							while(verifica.next()) {
+								totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+							}
+							verifica.fechaConexao();									
+							totalPagoVenda = UtilCoffe.precoToDouble(pega2.getString("total")) - totalPagoVenda;	
+							
+							if(totalPagoVenda > 0)
 							{
 								linha.add("0");
-								totalDivida += (Double.parseDouble(pega2.getString("total").replaceAll(",", ".")) - Double.parseDouble(pega2.getString("valor_pago").replaceAll(",", ".")));
+								totalDivida += (UtilCoffe.precoToDouble(pega2.getString("total")) - UtilCoffe.precoToDouble(pega2.getString("valor_pago")));
 							}
 							else {
 								linha.add("1");

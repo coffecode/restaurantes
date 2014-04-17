@@ -6,7 +6,7 @@ import codecoffe.restaurantes.primitivas.ProdutoVenda;
 
 public abstract class UtilCoffe
 {
-	public static final String VERSAO = "v2.00.11";
+	public static final String VERSAO = "v2.00.15";
 
 	public static final short SERVER = 1;
 	public static final short CLIENT = 2;

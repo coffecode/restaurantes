@@ -13,12 +13,12 @@ import codecoffe.restaurantes.utilitarios.Configuracao;
 import codecoffe.restaurantes.utilitarios.DiarioLog;
 import codecoffe.restaurantes.utilitarios.GraficoFiados;
 import codecoffe.restaurantes.utilitarios.Usuario;
+import codecoffe.restaurantes.utilitarios.UtilCoffe;
 
 import com.alee.laf.scroll.WebScrollPane;
 
 import java.awt.Color;
 import java.awt.event.*;
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Vector;
 
@@ -51,7 +51,6 @@ public class PainelVendas extends JPanel
 
 		tabela = new DefaultTableModel() {
 			private static final long serialVersionUID = 1L;
-
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				if(column == 0 || column == 5)
@@ -69,54 +68,9 @@ public class PainelVendas extends JPanel
 		tabela.addColumn("Deletar");
 		tabela.addColumn("ID");
 
-		try {
-			Query pega = new Query();
-			pega.executaQuery("SELECT * FROM fiados ORDER BY nome");
-
-			while(pega.next())
-			{
-				Vector<Serializable> linha = new Vector<Serializable>();
-
-				double totalDivida = 0.0;
-				Query pega2 = new Query();
-				pega2.executaQuery("SELECT total, valor_pago FROM vendas WHERE `fiado_id` = " + pega.getInt("fiador_id") + "");
-
-				while(pega2.next())
-				{
-					if((Double.parseDouble(pega2.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega2.getString("valor_pago").replaceAll(",", "."))))
-					{
-						totalDivida += (Double.parseDouble(pega2.getString("total").replaceAll(",", ".")) - Double.parseDouble(pega2.getString("valor_pago").replaceAll(",", ".")));
-					}
-				}
-
-				String pegaPreco = String.format("%.2f", totalDivida);
-				pegaPreco.replaceAll(",", ".");
-
-				linha.add(pegaPreco);
-
-				linha.add(pega.getString("nome"));
-				linha.add(pega.getString("apelido"));
-				linha.add(pega.getString("telefone"));
-				linha.add(pega.getString("cpf"));			
-				linha.add("");
-				linha.add(pega.getInt("fiador_id"));
-
-				if(totalDivida > 0)
-				{
-					tabela.addRow(linha);
-				}
-			}
-
-			pega.fechaConexao();
-		} catch (NumberFormatException | ClassNotFoundException | SQLException e) {
-			e.printStackTrace();
-			new PainelErro(e);
-		}
-
 		tabelaFiados = new JTable() {
 			private static final long serialVersionUID = 1L;
 			Color alternate = new Color(206, 220, 249);
-
 			@Override
 			public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
 				Component stamp = super.prepareRenderer(renderer, row, column);
@@ -169,7 +123,7 @@ public class PainelVendas extends JPanel
 		painelUltimas = new UltimasVendas(config, painelListener);
 		TabelaVendas painelConsultar = new TabelaVendas(config, painelListener);
 		ConsultarDiario2 painelConsultarDiario = new ConsultarDiario2();
-		PainelGastos painelGastos = new PainelGastos();
+		PainelGastos painelGastos = new PainelGastos(listener);
 
 		ImageIcon iconeUltimas = new ImageIcon(getClass().getClassLoader().getResource("imgs/ultimas_vendas_aba_mini.png"));
 		tabbedPane.addTab("Últimas Vendas", iconeUltimas, painelUltimas, "Últimas vendas realizadas.");
@@ -188,12 +142,12 @@ public class PainelVendas extends JPanel
 
 		add(tabbedPane);
 		ToolTipManager.sharedInstance().setDismissDelay(40000);
+		refresh();
 	}
 
 	class CustomRenderer extends DefaultTableCellRenderer 
 	{
 		private static final long serialVersionUID = 1L;
-
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column)
 		{
 			Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -228,32 +182,39 @@ public class PainelVendas extends JPanel
 
 					while(pega.next())
 					{
-						Vector<Serializable> linha = new Vector<Serializable>();
-
+						Vector<String> linha = new Vector<String>();
 						double totalDivida = 0.0;
 						Query pega2 = new Query();
 						pega2.executaQuery("SELECT * FROM vendas WHERE `fiado_id` = " + pega.getInt("fiador_id") + "");
 
 						while(pega2.next())
 						{
-							totalDivida += (Double.parseDouble(pega2.getString("total").replaceAll(",", ".")) - Double.parseDouble(pega2.getString("valor_pago").replaceAll(",", ".")));
+							double totalPagoVenda = UtilCoffe.precoToDouble(pega2.getString("valor_pago"));
+							Query verifica = new Query();
+							verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega2.getInt("vendas_id"));
+							while(verifica.next()) {
+								totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+							}
+							verifica.fechaConexao();
+							
+							if(UtilCoffe.precoToDouble(pega2.getString("total")) > totalPagoVenda) {
+								totalDivida += (UtilCoffe.precoToDouble(pega2.getString("total")) - totalPagoVenda);
+							}
 						}
 
-						String pegaPreco = String.format("%.2f", totalDivida);
-						pegaPreco.replaceAll(",", ".");
-
-						linha.add(pegaPreco);
-
+						linha.add(UtilCoffe.doubleToPreco(totalDivida));
 						linha.add(pega.getString("nome"));
 						linha.add(pega.getString("apelido"));
 						linha.add(pega.getString("telefone"));
 						linha.add(pega.getString("cpf"));
 						linha.add("");
-						linha.add(pega.getInt("fiador_id"));
+						linha.add("" + pega.getInt("fiador_id"));
 
 						if(totalDivida > 0) {
 							tabela.addRow(linha);
 						}
+						
+						pega2.fechaConexao();
 					}
 
 					pega.fechaConexao();
@@ -291,29 +252,39 @@ public class PainelVendas extends JPanel
 
 				while(pega.next())
 				{
-					if((Double.parseDouble(pega.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."))))
+					if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
 					{
-						formataTip += "<b>Venda #" + pega.getInt("vendas_id") + "</b>  (<i>" + pega.getString("horario") +")</i><br>";
-
-						Query pega2 = new Query();
-						pega2.executaQuery("SELECT * FROM vendas_produtos WHERE `id_link` = " + pega.getInt("vendas_id"));
-
-						while(pega2.next())
-						{
-							formataTip += pega2.getInt("quantidade_produto") + "x .......... <b>" + pega2.getString("nome_produto") + "</b>";
-
-							if(!"".equals(pega2.getString("adicionais_produto").trim()))
-							{
-								formataTip += " com " + pega2.getString("adicionais_produto");
-							}
-
-							formataTip += " - R$" +  pega2.getString("preco_produto") + "<br>";
+						double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+						
+						Query verifica = new Query();
+						verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+						while(verifica.next()) {
+							totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
 						}
-
-						formataTip += "Total: " + pega.getString("total") + " | Pago: " +  pega.getString("valor_pago");
-
-						formataTip += "<br><br>";
-						pega2.fechaConexao();
+						verifica.fechaConexao();
+						
+						if((UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda) > 0)
+						{
+							formataTip += "<b>Venda #" + pega.getInt("vendas_id") + "</b>  (<i>" + pega.getString("horario") +")</i><br>";
+							Query pega2 = new Query();
+							pega2.executaQuery("SELECT * FROM vendas_produtos WHERE `id_link` = " + pega.getInt("vendas_id"));
+	
+							while(pega2.next())
+							{
+								formataTip += pega2.getInt("quantidade_produto") + "x .......... <b>" + pega2.getString("nome_produto") + "</b>";
+	
+								if(!"".equals(pega2.getString("adicionais_produto").trim()))
+								{
+									formataTip += " com " + pega2.getString("adicionais_produto");
+								}
+	
+								formataTip += " - R$" +  pega2.getString("preco_produto") + "<br>";
+							}
+	
+							formataTip += "Total: " + pega.getString("total") + " | Pago: " + UtilCoffe.doubleToPreco(totalPagoVenda);
+							formataTip += "<br><br>";
+							pega2.fechaConexao();
+						}
 					}
 				}				
 
@@ -342,20 +313,10 @@ public class PainelVendas extends JPanel
 		}
 	}
 
-	/**
-	 * @version 1.0 11/09/98
-	 */
-
 	class ButtonEditor extends DefaultCellEditor {
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
-
 		protected JButton button;
-
 		private String label;
-
 		private boolean isPushed;
 
 		public ButtonEditor(JCheckBox checkBox) {
@@ -400,7 +361,7 @@ public class PainelVendas extends JPanel
 					{
 						String bla = "Escreva o valor a ser deduzido da dívida.\n";
 						bla += "Importante:\n\n1- Não é possível aumentar a dívida, apenas reduzí-la.\n";
-						bla += "2 - Não é possível desfazer essa ação.\n3- Se o valor digitado for maior ou igual que o da dívida, a mesma será quitada.\n\n";
+						bla += "2- Não é possível desfazer essa ação.\n3- Se o valor digitado for maior ou igual que o da dívida, a mesma será quitada.\n\n";
 						String pegaResposta = JOptionPane.showInputDialog(null, bla, "Reduzir Dívida", JOptionPane.QUESTION_MESSAGE);
 
 						if(pegaResposta == null)
@@ -411,37 +372,55 @@ public class PainelVendas extends JPanel
 							pegaResposta = pegaResposta.replaceAll("[^0-9.,]+","");
 							pegaResposta = pegaResposta.replaceAll(",",".");
 
-							double resposta = Double.parseDouble(pegaResposta);
-							double deduzindo = resposta;
-
-							if(resposta > 0)
+							double deduzindo = Double.parseDouble(pegaResposta);
+							if(deduzindo > 0)
 							{
-								DiarioLog.add(Usuario.INSTANCE.getNome(), "Reduziu R$" + pegaResposta + " da dívida do " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1) + " (TEL: " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 3) + " ) de R$" + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 0) + ".", 6);
-
+								DiarioLog.add(Usuario.INSTANCE.getNome(), "Reduziu R$" + pegaResposta + " da dívida do " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1) 
+																	+ " (TEL: " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 3) + " ) de R$" 
+																					+ (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 0) + ".", 6);
 								try {
 									Query pega = new Query();
 									pega.executaQuery("SELECT * FROM vendas WHERE `fiado_id` = " + tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 6) + "");
 
 									while(pega.next())
 									{
-										if((Double.parseDouble(pega.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."))))
+										if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
 										{
-											double conta = Double.parseDouble(pega.getString("total").replaceAll(",", ".")) - Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."));
-
-											Query manda = new Query();
-
-											if(conta >= deduzindo)
-											{
-												String atualizado = String.format("%.2f", (deduzindo + Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."))));
-												manda.executaUpdate("UPDATE vendas SET `valor_pago` = '" + atualizado + "' WHERE `vendas_id` = " + pega.getInt("vendas_id"));				
-												manda.fechaConexao();
-												break;
+											double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+											Query verifica = new Query();
+											verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+											while(verifica.next()) {
+												totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
 											}
-											else
+											verifica.fechaConexao();									
+											
+											totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda;
+											if(totalPagoVenda > 0)
 											{
-												deduzindo = (deduzindo + Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."))) - Double.parseDouble(pega.getString("total").replaceAll(",", "."));
-												manda.executaUpdate("UPDATE vendas SET `valor_pago` = '" + pega.getString("total") + "' WHERE `vendas_id` = " + pega.getInt("vendas_id"));
-												manda.fechaConexao();
+												if(totalPagoVenda >= deduzindo)
+												{
+													Query manda = new Query();
+													manda.executaUpdate("INSERT INTO gastos(nome, descricao, data, valor, venda_fiado) VALUES('"
+															+ "Pagamento Dívida', '" 
+															+ tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1).toString() + " pagou uma parcela de sua dívida da Venda #" + pega.getInt("vendas_id") + "', " 
+															+ "CURDATE(), '"
+															+ UtilCoffe.doubleToPreco(deduzindo) + "', "
+															+ pega.getInt("vendas_id") + ")");
+													manda.fechaConexao();
+													break;
+												}
+												else
+												{
+													Query manda = new Query();
+													manda.executaUpdate("INSERT INTO gastos(nome, descricao, data, valor, venda_fiado) VALUES('"
+															+ "Pagamento Dívida', '" 
+															+ tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1).toString() + " quitou sua dívida da Venda #" + pega.getInt("vendas_id") + "', " 
+															+ "CURDATE(), '"
+															+ UtilCoffe.doubleToPreco(totalPagoVenda) + "', "
+															+ pega.getInt("vendas_id") + ")");
+													manda.fechaConexao();
+													deduzindo = (deduzindo - totalPagoVenda);
+												}
 											}
 										}
 									}
@@ -459,23 +438,39 @@ public class PainelVendas extends JPanel
 					else	// deletar
 					{
 						int opcao = JOptionPane.showConfirmDialog(null, "Essa opção irá quitar a dívida.\n\nVocê tem certeza?\n\n", "Quitar Dívida", JOptionPane.YES_NO_OPTION);
-
 						if(opcao == JOptionPane.YES_OPTION)
 						{
-							DiarioLog.add(Usuario.INSTANCE.getNome(), "Quitou a dívida de " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1) + " (TEL: " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 3) + " ) de R$" + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 0) + ".", 6);  
-
+							DiarioLog.add(Usuario.INSTANCE.getNome(), "Quitou a dívida de " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1) 
+																	+ " (TEL: " + (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 3) + " ) de R$" 
+																				+ (String) tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 0) + ".", 6);
 							try {
 								Query pega = new Query();
 								pega.executaQuery("SELECT * FROM vendas WHERE `fiado_id` = " + tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 6));
-
+								
 								while(pega.next())
 								{
-									if((Double.parseDouble(pega.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega.getString("valor_pago").replaceAll(",", "."))))
-									{		    								
-										Query manda = new Query();
-
-										manda.executaUpdate("UPDATE vendas SET `valor_pago` = '" + pega.getString("total") + "' WHERE `vendas_id` = " + pega.getInt("vendas_id"));
-										manda.fechaConexao();
+									if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
+									{
+										double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+										Query verifica = new Query();
+										verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+										while(verifica.next()) {
+											totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+										}
+										verifica.fechaConexao();
+										
+										totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda;
+										if(totalPagoVenda > 0)
+										{
+											Query manda = new Query();
+											manda.executaUpdate("INSERT INTO gastos(nome, descricao, data, valor, venda_fiado) VALUES('"
+													+ "Pagamento Dívida', '" 
+													+ tabelaFiados.getValueAt(tabelaFiados.getSelectedRow(), 1).toString() + " quitou sua dívida da Venda #" + pega.getInt("vendas_id") + "', " 
+													+ "CURDATE(), '"
+													+ UtilCoffe.doubleToPreco(totalPagoVenda) + "', "
+													+ pega.getInt("vendas_id") + ")");
+											manda.fechaConexao();	
+										}
 									}
 								}
 								pega.fechaConexao();

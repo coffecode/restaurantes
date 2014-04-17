@@ -259,7 +259,7 @@ public class ExportarVendasExcel implements Runnable
 				
 				row.createCell(8).setCellValue(pega3.getString("forma_pagamento"));
 				row.createCell(9).setCellValue(pega3.getString("total").replaceAll(",", "."));
-				totalTudo += Double.parseDouble(pega3.getString("total").replaceAll(",", "."));
+				totalTudo += UtilCoffe.precoToDouble(pega3.getString("total"));
 				
 				double conta = UtilCoffe.precoToDouble(pega3.getString("total"));
 				conta -= UtilCoffe.precoToDouble(pega3.getString("dezporcento"));
@@ -267,27 +267,35 @@ public class ExportarVendasExcel implements Runnable
 				row.createCell(10).setCellValue((UtilCoffe.doubleToPreco(conta).replaceAll(",", ".")));				
 				totalTudoSemBonus += conta;
 				
-				if((Double.parseDouble(pega3.getString("total").replaceAll(",", ".")) > Double.parseDouble(pega3.getString("valor_pago").replaceAll(",", "."))))
+				if(UtilCoffe.precoToDouble(pega3.getString("total")) > UtilCoffe.precoToDouble(pega3.getString("valor_pago")))
 				{
 					if(pega3.getString("forma_pagamento").equals("Fiado"))
 					{
-						row.createCell(11).setCellValue(pega3.getString("valor_pago").replaceAll(",", "."));
-						totalPago += Double.parseDouble(pega3.getString("valor_pago").replaceAll(",", "."));
+						double totalPagoVenda = UtilCoffe.precoToDouble(pega3.getString("valor_pago"));
+						Query verifica = new Query();
+						verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega3.getInt("vendas_id"));
+						while(verifica.next()) {
+							totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+						}
+						verifica.fechaConexao();
+						
+						row.createCell(11).setCellValue(UtilCoffe.doubleToPreco(totalPagoVenda));
+						totalPago += totalPagoVenda;
 					}
 					else
 					{
 						row.createCell(11).setCellValue(pega3.getString("valor_pago").replaceAll(",", "."));
-						totalPago += Double.parseDouble(pega3.getString("total").replaceAll(",", "."));
+						totalPago += UtilCoffe.precoToDouble(pega3.getString("total"));
 					}
 				}
 				else
 				{
 					row.createCell(11).setCellValue(pega3.getString("valor_pago").replaceAll(",", "."));
-					totalPago += Double.parseDouble(pega3.getString("valor_pago").replaceAll(",", "."));
+					totalPago += UtilCoffe.precoToDouble(pega3.getString("valor_pago"));
 				}
 				
 				row.createCell(12).setCellValue(pega3.getString("troco").replaceAll(",", "."));
-				totalTroco += Double.parseDouble(pega3.getString("troco").replaceAll(",", "."));
+				totalTroco += UtilCoffe.precoToDouble(pega3.getString("troco"));
 				index++;
 			}
 			

@@ -625,9 +625,27 @@ public class ExportarVendasPDF implements Runnable
 				{
 					if(pega.getString("forma_pagamento").equals("Fiado"))
 					{
-						escrever.add(new Paragraph(("(" + splited[2] + ") " + pega.getString("atendente") + " - " 
-								+ pega.getString("forma_pagamento") + " - Total: R$" + pega.getString("total") 
-								+ " - " + "Valor Pago: R$" + pega.getString("valor_pago")).replaceAll("\\s+", "  "), vendaFontRed));
+						double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+						Query verifica = new Query();
+						verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+						while(verifica.next()) {
+							totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+						}
+						verifica.fechaConexao();									
+						
+						totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda;
+						if(totalPagoVenda > 0)
+						{
+							escrever.add(new Paragraph(("(" + splited[2] + ") " + pega.getString("atendente") + " - " 
+									+ pega.getString("forma_pagamento") + " - Total: R$" + pega.getString("total") 
+									+ " - " + "Valor Pago: R$" + UtilCoffe.doubleToPreco(totalPagoVenda)).replaceAll("\\s+", "  "), vendaFontRed));
+						}
+						else
+						{
+							escrever.add(new Paragraph(("(" + splited[2] + ") " + pega.getString("atendente") + " - " 
+									+ pega.getString("forma_pagamento") + " - Total: R$" + pega.getString("total") 
+									+ " - " + "Valor Pago: R$" + UtilCoffe.doubleToPreco(totalPagoVenda)).replaceAll("\\s+", "  "), fontVendaBold12));
+						}
 					}
 					else
 					{

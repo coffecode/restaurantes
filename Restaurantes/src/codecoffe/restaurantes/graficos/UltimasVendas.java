@@ -123,64 +123,13 @@ public class UltimasVendas extends JPanel
 		tabela.getColumn("Deletar").setMaxWidth(60);
 		tabela.getColumn("Deletar").setCellEditor(new ButtonEditor(new JCheckBox()));
 		
-		try {
-			Query pega = new Query();
-			pega.executaQuery("SELECT * FROM vendas ORDER BY vendas_id DESC limit 0, 25");
-			
-			while(pega.next())
-			{
-				Vector<String> linha = new Vector<String>();
-						
-				linha.add("" + pega.getInt("vendas_id"));
-				linha.add(pega.getString("horario"));
-				linha.add(pega.getString("forma_pagamento"));
-				linha.add(pega.getString("total"));
-					
-				if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
-				{
-					if(pega.getString("forma_pagamento").equals("Fiado")) {
-						linha.add("0");
-					}
-					else
-						linha.add("1");
-				}
-				else
-					linha.add("1");
-					
-				linha.add(pega.getString("atendente"));
-				
-				if(configDelivery)
-				{
-					if(UtilCoffe.precoToDouble(pega.getString("delivery")) > 0) {
-						linha.add("1");
-					}
-					else
-						linha.add("0");
-				}
-				
-				if(configDez)
-				{
-					if(UtilCoffe.precoToDouble(pega.getString("dezporcento")) > 0) {
-						linha.add("1");
-					}
-					else
-						linha.add("0");
-				}
-				
-				linha.add("");
-				tabelaModel.addRow(linha);
-			}
-		} catch (NumberFormatException | ClassNotFoundException | SQLException e1) {
-			e1.printStackTrace();
-			new PainelErro(e1);
-		}	
-		
 		WebScrollPane scrolltabela = new WebScrollPane(tabela, true);
 		scrolltabela.getViewport().setBackground(new Color(237, 237, 237));
 		scrolltabela.setFocusable(false);
 		
 		add(scrolltabela, "grow, pushy, span, wrap");
 		ToolTipManager.sharedInstance().setInitialDelay(0);
+		refresh();
 	}
 
 	public void refresh()
@@ -203,9 +152,18 @@ public class UltimasVendas extends JPanel
 						linha.add(pega.getString("forma_pagamento"));
 						linha.add(pega.getString("total"));
 							
-						if(UtilCoffe.precoToDouble(pega.getString("total")) > UtilCoffe.precoToDouble(pega.getString("valor_pago")))
+						if(pega.getString("forma_pagamento").equals("Fiado"))
 						{
-							if(pega.getString("forma_pagamento").equals("Fiado")) {
+							double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+							Query verifica = new Query();
+							verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+							while(verifica.next()) {
+								totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+							}
+							verifica.fechaConexao();									
+							totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("total")) - totalPagoVenda;	
+							
+							if(totalPagoVenda > 0) {
 								linha.add("0");
 							}
 							else

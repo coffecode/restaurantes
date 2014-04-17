@@ -11,7 +11,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -115,11 +114,11 @@ public class VisualizarVenda extends JFrame
 				
 				while(pega2.next())
 				{
-					Vector<Serializable> linha = new Vector<Serializable>();		
+					Vector<String> linha = new Vector<String>();		
 					
 					linha.add(pega2.getString("nome_produto"));
 					linha.add(pega2.getString("adicionais_produto"));
-					linha.add(pega2.getInt("quantidade_produto"));
+					linha.add("" + pega2.getInt("quantidade_produto"));
 					linha.add(pega2.getString("preco_produto"));
 					tabela.addRow(linha);	
 				}
@@ -129,7 +128,6 @@ public class VisualizarVenda extends JFrame
 				JTable tabelaVendas = new JTable() {
 					private static final long serialVersionUID = 1L;
 					Color alternate = new Color(206, 220, 249);
-				    
 				    @Override
 				    public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
 				        Component stamp = super.prepareRenderer(renderer, row, column);
@@ -222,7 +220,20 @@ public class VisualizarVenda extends JFrame
 				delivery.setPreferredSize(new Dimension(220, 30));
 				delivery.addItemListener(il);
 				
-				campoValor = new JTextField(pega.getString("valor_pago"));
+				if(pega.getString("forma_pagamento").equals("Fiado")) {
+					double totalPagoVenda = UtilCoffe.precoToDouble(pega.getString("valor_pago"));
+					Query verifica = new Query();
+					verifica.executaQuery("SELECT valor FROM gastos WHERE `venda_fiado` = " + pega.getInt("vendas_id"));
+					while(verifica.next()) {
+						totalPagoVenda += UtilCoffe.precoToDouble(verifica.getString("valor"));
+					}
+					verifica.fechaConexao();
+					
+					campoValor = new JTextField(UtilCoffe.doubleToPreco(totalPagoVenda));
+				}
+				else
+					campoValor = new JTextField(pega.getString("valor_pago"));
+				
 				campoValor.setHorizontalAlignment(SwingConstants.CENTER);
 				campoValor.setPreferredSize(new Dimension(90, 30));
 				campoValor.addKeyListener(new KeyAdapter()
